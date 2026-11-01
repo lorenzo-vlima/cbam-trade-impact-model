@@ -19,7 +19,7 @@ from matplotlib import rcParams
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-root = 'C:/Users/loren/OneDrive/Documentos/TCC CBAM/Projeto R/Versão Claude code/MODELO_OFICIAL'
+import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
 out  = root + '/figuras_geradas/'
 cfg  = root + '/config'
 bdir = root + '/outputs'
