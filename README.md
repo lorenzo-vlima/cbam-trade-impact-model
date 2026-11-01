@@ -13,8 +13,7 @@ scenario, so each simulated change is the effect of pure reallocation, with no
 technological response by exporters. The second outcome (greener technology)
 is not modelled.
 
-Language: code comments are mostly in Portuguese; documentation and the
-dashboard are in English.
+Language: code comments are mostly in Portuguese; the documentation is in English.
 
 ## Summary of results
 
@@ -37,7 +36,7 @@ consequence of share renormalisation, not an estimated supply response.
 - `rodar_modelo.R`: runner. Set `PRODUTO`, `PAISES` and `NOME`, then run it.
 - `analise_realocacao_verde.R`: isolates pure reallocation (fixed technology): aggregate change in embedded emissions, average carbon intensity of the basket before/after, and whether dirtier exporters lose more share.
 - `analise_realocacao_cesta.csv`, `analise_realocacao_paises.csv`: outputs of the script above.
-- `extrair_dashboard.R`: consolidates the model outputs into the JSON embedded in the dashboard.
+- `extrair_dashboard.R`: consolidates the model outputs of the three sectors into a single JSON file.
 - `LICENSE`: MIT.
 
 ## scripts folder
@@ -89,14 +88,6 @@ Main figures:
 - Stability and placebo tests: `_graficos_rolling_betas.py`, `_graficos_stable_years_test.py`, `_graficos_stable_market_test.py`
 - Anti-dumping 2016 validation: `_teste_antidumping_2016.py`
 
-## dashboard folder
-
-`cbam_manifest.html` is a single self-contained interactive page (data
-embedded; only web fonts are fetched). It shows, by sector, carbon price and
-tariff regime: the market overview before/after, a per-country view with
-product-level drill-down, and the pure-reallocation comparison across sectors.
-Open it in a browser.
-
 ## Folders not tracked here
 
 `outputs/` (model results per run, about 60 MB) and `figuras_geradas/`
@@ -106,7 +97,7 @@ code and are git-ignored.
 ## How to replicate
 
 1. Install R 4.5 with `tidyverse`, `fixest`, `broom`, `ggplot2`, `janitor`
-   (and `jsonlite` for the dashboard export). Python 3 with `matplotlib` for
+   (and `jsonlite` for the JSON export). Python 3 with `matplotlib` for
    the figures.
 2. Edit the three lines at the top of `rodar_modelo.R`:
 
