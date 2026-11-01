@@ -1,0 +1,12 @@
+# Resultados regeneráveis (rodar_modelo.R recria outputs/)
+outputs/
+figuras_geradas/
+
+# Artefatos locais
+Rplots.pdf
+.claude/
+.Rhistory
+.RData
+.Rproj.user/
+node_modules/
+dashboard_data.json
