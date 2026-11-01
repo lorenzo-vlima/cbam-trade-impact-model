@@ -16,8 +16,7 @@ consistente com a hipótese de que o diferencial país-específico é no máximo
 import csv, sys, math
 sys.stdout.reconfigure(encoding='utf-8')
 
-root = 'C:/Users/loren/OneDrive/Documentos/TCC CBAM/Projeto R/Versão Claude code/MODELO_OFICIAL'
-
+import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
 setores = [
     'ferro_aco_brasil_e_argentina_individual_post_tax_j3',
     'aluminio_brasil_e_argentina_individual_post_tax_j3',

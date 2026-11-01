@@ -9,8 +9,8 @@ from collections import defaultdict
 
 sys.stdout.reconfigure(encoding='utf-8')
 
-base = ('C:/Users/loren/OneDrive/Documentos/TCC CBAM/Projeto R/'
-        'Versão Claude code/outputs')
+import os
+base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'outputs')
 
 SETORES = {
     'aluminio':  'aluminio_brasil_e_argentina_individual_post_tax_j3_v2',
