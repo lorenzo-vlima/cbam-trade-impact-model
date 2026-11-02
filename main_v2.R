@@ -55,6 +55,9 @@ ano_corte      <- 2025
 ano_val_treino  <- 2022
 ano_val_teste   <- 2025
 
+# Output folder suffix (the anti-dumping test uses "roll2015" runs)
+sufixo_output  <- "v2"
+
 share_min_pais <- NULL
 
 janela_base        <- 3
@@ -95,7 +98,7 @@ if (length(paises_grupo) == 0)
 
 dir_output <- file.path("outputs",
                         paste(produto_ativo, nome_grupo, modo_grupo, price_model,
-                              paste0("j", janela_base), "v2", sep = "_"))
+                              paste0("j", janela_base), sufixo_output, sep = "_"))
 dir.create(dir_output, recursive = TRUE, showWarnings = FALSE)
 
 cat("========================================\n")
