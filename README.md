@@ -107,6 +107,9 @@ the scripts through environment variables instead of renaming folders:
 CBAM_RUN=my_run CBAM_TAG=individual_pre_tax_j3_v2 python figuras/_graf_sim_FA_resumo_v3.py
 ```
 
+That is bash syntax. In Windows PowerShell set them first, for example
+`$env:CBAM_RUN = "my_run"; $env:CBAM_TAG = "individual_pre_tax_j3_v2"`, then run the script.
+
 `CBAM_RUN` is the `NOME` you used and `CBAM_TAG` is everything after it in the
 folder name. In `analysis/analise_realocacao_verde.R` set `run_name` and `tag`
 at the top of the file instead.
