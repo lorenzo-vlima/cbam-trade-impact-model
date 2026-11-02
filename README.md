@@ -87,11 +87,12 @@ Rscript rodar_modelo.R
 Results go to `outputs/<product>_brasil_e_argentina_individual_post_tax_j3_v2/`.
 Repeat for `aluminio` and `cimento`. A run takes a few minutes.
 
-### 2. Historical test (anti-dumping 2016)
+### 2. Historical test (anti-dumping 2016) — optional
 
-The anti-dumping figures need two extra runs of iron & steel on data up to
-2015. In `rodar_modelo.R` set `ANO_CORTE <- 2015` and `SUFIXO <- "roll2015"`,
-then run it twice:
+This step is an extra check and is not needed for the main results. Skip it
+unless you want Figures 8 and 9, which need two extra runs of iron & steel on
+data up to 2015. In `rodar_modelo.R` set `ANO_CORTE <- 2015` and
+`SUFIXO <- "roll2015"`, then run it twice:
 
 | `PAISES` | `NOME` |
 |---|---|
@@ -109,8 +110,8 @@ The scripts read from `outputs/` and write PNGs to `figuras_geradas/`.
 | 4. Impact scenarios, iron & steel | `_graf_sim_FA_resumo_v3.py` | step 1, `ferro_aco` |
 | 5 and 10. Impact by product, Brazil and Argentina | `_graf_bubble_separado.py` | step 1, `ferro_aco` |
 | 6. Impact scenarios, aluminium | `_graf_sim_AL_resumo_v2.py` | step 1, `aluminio` |
-| 8. Historical validation, global elasticities | `_teste_antidumping_2016.py` | step 2 |
-| 9. Historical validation, country-specific elasticities | `_teste_antidumping_2016_opA.py` | step 2 |
+| 8. Historical validation, global elasticities (optional) | `_teste_antidumping_2016.py` | step 2 |
+| 9. Historical validation, country-specific elasticities (optional) | `_teste_antidumping_2016_opA.py` | step 2 |
 | 11. Tariffs vs. CBAM cost, aluminium | `_graf_AL_tarifa_vs_cbam.py` | none (values embedded) |
 | Table 4. Explanatory power | `_graficos_secao1.py` | none (values embedded) |
 
