@@ -33,15 +33,16 @@ carbon prices and two tariff regimes (MFN and Mercosul).
 ## Repository layout
 
 ```
-paper/          the paper (PDF)
-main_v2.R       official model; configuration at the top
-rodar_modelo.R  runner: set PRODUTO / PAISES / NOME and run
-scripts/        pipeline 00 to 09 (+ 04b), sourced in order by main_v2.R
-helpers/        shrinkage with sign constraint, goodness of fit, beta audit
-config/         trade data, emission factors, product-to-group mappings
-figuras/        Python scripts for the paper figures
-analysis/       extra analysis: pure reallocation vs. green technology
-outputs/        model results per run (generated, git-ignored)
+paper/           the paper (PDF)
+CONFIGURATION.md every option, every fixed choice, and why (read this next)
+main_v2.R        official model; configuration at the top
+rodar_modelo.R   runner: set PRODUTO / PAISES / NOME and run
+scripts/         pipeline 00 to 09 (+ 04b), sourced in order by main_v2.R
+helpers/         shrinkage with sign constraint, goodness of fit, beta audit
+config/          trade data, emission factors, product-to-group mappings
+figuras/         Python scripts for the paper figures
+analysis/        extra analysis: pure reallocation vs. green technology
+outputs/         model results per run (generated, git-ignored)
 ```
 
 ### scripts and helpers
@@ -86,6 +87,10 @@ Rscript rodar_modelo.R
 
 Repeat for `aluminio` and `cimento`. A run takes a few minutes.
 
+**Every option is documented in [`CONFIGURATION.md`](CONFIGURATION.md)**: what
+it does, its default, whether the paper uses it, and the reason the paper gives.
+The table below is only a summary of the options that change the output folder.
+
 **Run folders.** Results go to
 `outputs/<product>_<NOME>_<mode>_<price_model>_j<window>_<suffix>/`, for
 example `outputs/ferro_aco_brazil_and_argentina_individual_post_tax_j3_v2/`.
@@ -94,7 +99,7 @@ The parts after `<NOME>` come from the configuration at the top of
 
 | Option | Default | Notes |
 |---|---|---|
-| `modo_grupo` | `"individual"` | The only implemented mode: one elasticity per focal country. |
+| `modo_grupo` | `"individual"` | The only implemented mode: each focal country gets its own elasticity (Equation 3 of the paper). |
 | `price_model` | `"post_tax"` | `"post_tax"` adds the ad valorem tariff to the price (the paper); any other value, e.g. `"pre_tax"`, leaves the price without the tariff. Set it with `PRICE_MODEL` in `rodar_modelo.R`. |
 | `janela_base` | `3` | Years averaged for the base shares (the `j3` in the folder name). |
 | `sufixo_output` | `"v2"` | Set it with `SUFIXO` in `rodar_modelo.R`. |
