@@ -30,7 +30,7 @@ dir_helpers <- "helpers"
 produto_ativo <- "aluminio"
 
 paises_grupo <- c("BR", "AR")
-nome_grupo   <- "brasil_e_argentina"
+nome_grupo   <- "brazil_and_argentina"
 
 price_model <- "post_tax"
 
@@ -86,7 +86,7 @@ projecao_precos <- c(
 # VALIDATION
 # ----------------------------------------
 
-if (!modo_grupo %in% c("individual", "agregado"))
+if (modo_grupo != "individual")
   stop("modo_grupo must be 'individual'.")
 
 if (length(paises_grupo) == 0)

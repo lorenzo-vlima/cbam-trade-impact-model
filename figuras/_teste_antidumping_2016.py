@@ -26,6 +26,10 @@ from matplotlib import rcParams
 sys.stdout.reconfigure(encoding='utf-8')
 
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
+# Run folder = <sector>_<RUN>_<TAG>. RUN is NOME in rodar_modelo.R; override with the
+# environment variables CBAM_RUN / CBAM_TAG if your runs are named differently.
+RUN = os.environ.get('CBAM_RUN', 'brazil_and_argentina')
+TAG = os.environ.get('CBAM_TAG', 'individual_post_tax_j3_roll2015')
 out  = root + '/figuras_geradas/'
 os.makedirs(out, exist_ok=True)
 cfg  = root + '/config'
@@ -125,7 +129,7 @@ def compute_panel(data, winsor_p99=None):
 
 # ── Load pre-shock betas (roll2015) ───────────────────────────────────────
 def load_betas_pre(setor):
-    path = (f'{bdir}/{setor}_brasil_e_argentina_individual_post_tax_j3_roll2015'
+    path = (f'{bdir}/{setor}_{RUN}_{TAG}'
             f'/4_betas_simulacao_cbam.csv')
     betas = {}
     with open(path, encoding='utf-8') as f:

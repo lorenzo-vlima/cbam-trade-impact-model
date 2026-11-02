@@ -14,7 +14,7 @@ Difference relative to the base script (option A):
   Instead of using beta_base (global) for CN and RU, it uses beta_sim_CN and
   beta_sim_RU estimated with CN and RU as focal countries, exactly the
   same methodology used for BR and AR in the CBAM simulation.
-  Modelo: ferro_aco_china_e_russia_individual_post_tax_j3_roll2015
+  Modelo: ferro_aco_<run>_individual_post_tax_j3_roll2015
 
 Test logic:
   1. Pre-shock model 2010-2015 with CN/RU as focal countries
@@ -32,6 +32,11 @@ from matplotlib import rcParams
 sys.stdout.reconfigure(encoding='utf-8')
 
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
+# Run folder = <sector>_<RUN>_<TAG>. RUN is NOME in rodar_modelo.R; override with the
+# environment variables CBAM_RUN / CBAM_TAG if your runs are named differently.
+RUN = os.environ.get('CBAM_RUN', 'brazil_and_argentina')
+TAG = os.environ.get('CBAM_TAG', 'individual_post_tax_j3_roll2015')
+RUN_CNRU = os.environ.get('CBAM_RUN_CNRU', 'china_and_russia')
 out  = root + '/figuras_geradas/'
 os.makedirs(out, exist_ok=True)
 cfg  = root + '/config'
@@ -136,7 +141,7 @@ def load_betas_pre(setor):
     For each product it returns:
       {'global': beta_base, 'CN': beta_sim_CN, 'RU': beta_sim_RU}
     """
-    path = (f'{bdir}/{setor}_china_e_russia_individual_post_tax_j3_roll2015'
+    path = (f'{bdir}/{setor}_{RUN_CNRU}_{TAG}'
             f'/4_betas_simulacao_cbam.csv')
     betas = {}
     with open(path, encoding='utf-8') as f:

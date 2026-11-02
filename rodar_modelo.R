@@ -9,12 +9,16 @@
 
 PRODUTO <- "ferro_aco"                          # "ferro_aco" | "aluminio" | "cimento"
 PAISES  <- c("BR", "AR")
-NOME    <- "brasil_e_argentina"               # group name (output folder name; the figure scripts expect this one)
+NOME    <- "brazil_and_argentina"             # run name (part of the output folder name)
 
 # Optional: historical test (anti-dumping 2016) runs on data up to 2015.
 # Use ANO_CORTE <- 2015 and SUFIXO <- "roll2015"; leave NULL for the main runs.
 ANO_CORTE <- NULL
 SUFIXO    <- NULL
+
+# Optional: price definition. "post_tax" (the paper) adds the ad valorem tariff to the
+# price; any other value, for example "pre_tax", leaves the price without the tariff.
+PRICE_MODEL <- NULL
 
 linhas <- readLines("main_v2.R", warn = FALSE, encoding = "UTF-8")
 linhas <- sub("^produto_ativo[[:space:]]*<-.*",
@@ -29,6 +33,9 @@ if (!is.null(ANO_CORTE)) {
   linhas <- sub("^ano_corte[[:space:]]*<-.*", paste0("ano_corte <- ", ANO_CORTE), linhas)
   linhas <- sub("^ano_val_treino[[:space:]]*<-.*", paste0("ano_val_treino <- ", ANO_CORTE - 2), linhas)
   linhas <- sub("^ano_val_teste[[:space:]]*<-.*", paste0("ano_val_teste <- ", ANO_CORTE), linhas)
+}
+if (!is.null(PRICE_MODEL)) {
+  linhas <- sub("^price_model[[:space:]]*<-.*", paste0('price_model <- "', PRICE_MODEL, '"'), linhas)
 }
 if (!is.null(SUFIXO)) {
   linhas <- sub("^sufixo_output[[:space:]]*<-.*", paste0('sufixo_output <- "', SUFIXO, '"'), linhas)

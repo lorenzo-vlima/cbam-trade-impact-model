@@ -77,15 +77,39 @@ Set the three lines at the top of `rodar_modelo.R` and run it, once per sector:
 ```r
 PRODUTO <- "ferro_aco"          # "ferro_aco" | "aluminio" | "cimento"
 PAISES  <- c("BR", "AR")        # focal countries (ISO-2)
-NOME    <- "brasil_e_argentina" # keep this name: the figure scripts read it
+NOME    <- "brazil_and_argentina" # any name you like (see "Run folders" below)
 ```
 
 ```bash
 Rscript rodar_modelo.R
 ```
 
-Results go to `outputs/<product>_brasil_e_argentina_individual_post_tax_j3_v2/`.
 Repeat for `aluminio` and `cimento`. A run takes a few minutes.
+
+**Run folders.** Results go to
+`outputs/<product>_<NOME>_<mode>_<price_model>_j<window>_<suffix>/`, for
+example `outputs/ferro_aco_brazil_and_argentina_individual_post_tax_j3_v2/`.
+The parts after `<NOME>` come from the configuration at the top of
+`main_v2.R`:
+
+| Option | Default | Notes |
+|---|---|---|
+| `modo_grupo` | `"individual"` | The only implemented mode: one elasticity per focal country. |
+| `price_model` | `"post_tax"` | `"post_tax"` adds the ad valorem tariff to the price (the paper); any other value, e.g. `"pre_tax"`, leaves the price without the tariff. Set it with `PRICE_MODEL` in `rodar_modelo.R`. |
+| `janela_base` | `3` | Years averaged for the base shares (the `j3` in the folder name). |
+| `sufixo_output` | `"v2"` | Set it with `SUFIXO` in `rodar_modelo.R`. |
+
+The figure scripts look for the folders of the default configuration, with
+`NOME` set to `brazil_and_argentina`. If you used another name or options, tell
+the scripts through environment variables instead of renaming folders:
+
+```bash
+CBAM_RUN=my_run CBAM_TAG=individual_pre_tax_j3_v2 python figuras/_graf_sim_FA_resumo_v3.py
+```
+
+`CBAM_RUN` is the `NOME` you used and `CBAM_TAG` is everything after it in the
+folder name. In `analysis/analise_realocacao_verde.R` set `run_name` and `tag`
+at the top of the file instead.
 
 ### 2. Historical test (anti-dumping 2016) — optional
 
@@ -96,8 +120,8 @@ data up to 2015. In `rodar_modelo.R` set `ANO_CORTE <- 2015` and
 
 | `PAISES` | `NOME` |
 |---|---|
-| `c("BR", "AR")` | `"brasil_e_argentina"` |
-| `c("CN", "RU")` | `"china_e_russia"` |
+| `c("BR", "AR")` | `"brazil_and_argentina"` |
+| `c("CN", "RU")` | `"china_and_russia"` |
 
 ### 3. Figures
 
@@ -130,8 +154,8 @@ reallocation of the supplier basket, with no technological response by
 exporters. It reports the aggregate change in embedded emissions, the average
 carbon intensity of the basket before and after, and whether dirtier exporters
 lose more share. This analysis is not part of the paper; its outputs are the
-two CSV files in the same folder. It reads model runs named `cesta_padrao`
-(set `NOME <- "cesta_padrao"` in `rodar_modelo.R`, with the basket of countries
+two CSV files in the same folder. It reads model runs named `standard_basket`
+(set `NOME <- "standard_basket"` in `rodar_modelo.R`, with the basket of countries
 of your choice). Caveat: the emission-factor file has no EU producers, so the
 effect on global emissions cannot be assessed.
 
