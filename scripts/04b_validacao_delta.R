@@ -1,51 +1,51 @@
 ############################################
 # 04b_validacao_delta.R
 # ----------------------------------------
-# Validação adicional: β como elasticidade
-# de VARIAÇÕES (não de níveis).
+# Additional validation: β as an elasticity
+# of CHANGES (not of levels).
 #
-# Lógica:
-#   Para cada par (exportador × produto):
+# Logic:
+#   For each pair (exporter × product):
 #     Δlog(DV)_obs  = log(DV_teste) - log(DV_base)
-#     Δlog(DV)_pred = β_sim × Δlog(preço_rel)
+#     Δlog(DV)_pred = β_sim × Δlog(price_rel)
 #
-#   Se β captura bem a substituição, as duas
-#   séries devem ter correlação positiva e
-#   slope próximo de 1.
+#   If β captures substitution well, the two
+#   series should be positively correlated and
+#   have a slope close to 1.
 #
-# Métricas:
-#   cor       → β acerta direção?
+# Metrics:
+#   cor       → does β get the direction right?
 #   slope     → β bem calibrado em magnitude?
-#   sign_acc  → % de pares com sinal correto
-#   mae_delta → erro médio em Δlog
+#   sign_acc  → % of pairs with the correct sign
+#   mae_delta → mean error in Δlog
 #
 # DV deste script: share
 #
-# Depende (em memória): df, betas_simulacao,
+# Depends (in memory): df, betas_simulacao,
 #   paises_grupo, janela_base, ano_val_treino,
 #   ano_val_teste, dir_output, produto_ativo
 ############################################
 
-cat("[ 04b ] Validação delta — β como elasticidade de variações (share)...\n")
+cat("[ 04b ] Delta validation — β as an elasticity of changes (share)...\n")
 
-# ── Parâmetros ─────────────────────────────────────────────────────────────────
+# ── Parameters ─────────────────────────────────────────────────────────────────
 dv_col       <- "share"
-min_dv_delta <- 0          # share > 0 é suficiente
+min_dv_delta <- 0          # share > 0 is enough
 
 anos_base_val  <- (ano_val_treino - janela_base + 1):ano_val_treino
 anos_teste_val <- (ano_val_treino + 1):ano_val_teste
 
 if (length(anos_teste_val) == 0) {
-  cat("  [04b] Nenhum ano de teste disponível — pulando.\n")
+  cat("  [04b] No test year available — skipping.\n")
   cat("[ 04b ] OK\n")
 } else {
 
-cat(sprintf("  DV: %s | Base: %d–%d | Teste: %d–%d\n",
+cat(sprintf("  DV: %s | Base: %d–%d | Test: %d–%d\n",
             dv_col,
             min(anos_base_val), max(anos_base_val),
             min(anos_teste_val), max(anos_teste_val)))
 
-# ── 1. Período base: TODOS os exportadores com dados suficientes ──────────────
+# ── 1. Base period: ALL exporters with enough data ──────────────
 base_df <- df %>%
   filter(year %in% anos_base_val,
          .data[[dv_col]] > min_dv_delta,
@@ -59,10 +59,10 @@ base_df <- df %>%
   ) %>%
   filter(dv_base > 0, price_rel_base > 0, n_base >= 1)
 
-cat(sprintf("  Exportadores no período base: %d | Pares exp×prod: %d\n",
+cat(sprintf("  Exporters in base period: %d | Exp×prod pairs: %d\n",
             n_distinct(base_df$exporter), nrow(base_df)))
 
-# ── 2. Período teste: TODOS os exportadores ───────────────────────────────────
+# ── 2. Test period: ALL exporters ───────────────────────────────────
 test_df <- df %>%
   filter(year %in% anos_teste_val,
          .data[[dv_col]] > min_dv_delta,
@@ -71,16 +71,16 @@ test_df <- df %>%
          dv_obs         = all_of(dv_col),
          price_rel_test = price_rel)
 
-# ── 3. Betas: focal = beta_sim_X; demais = beta_base (global por produto) ─────
+# ── 3. Betas: focal = beta_sim_X; others = beta_base (global by product) ─────
 #
-# O β foi estimado com todos os exportadores — faz sentido testá-lo em todos.
-# Países focais (paises_grupo) recebem o β shrinkage-ajustado.
-# Todos os outros recebem o β global por produto (beta_base).
+# β was estimated with all exporters, so it makes sense to test it on all of them.
+# Focal countries (paises_grupo) get the shrinkage-adjusted β.
+# All others get the global β by product (beta_base).
 
 beta_cols_disp <- intersect(paste0("beta_sim_", paises_grupo),
                              names(betas_simulacao))
 
-# Betas dos países focais (shrinkage-ajustado)
+# Betas of focal countries (shrinkage-adjusted)
 beta_focal <- betas_simulacao %>%
   select(product, all_of(beta_cols_disp)) %>%
   pivot_longer(
@@ -92,7 +92,7 @@ beta_focal <- betas_simulacao %>%
   filter(!is.na(beta_sim)) %>%
   mutate(grupo_exporter = "focal")
 
-# Betas de todos os outros exportadores (beta global)
+# Betas of all other exporters (global beta)
 exportadores_nao_focais <- setdiff(unique(base_df$exporter), paises_grupo)
 
 beta_outros <- tidyr::expand_grid(
@@ -112,12 +112,12 @@ delta_df <- test_df %>%
   filter(!is.na(dv_base), !is.na(price_rel_base), !is.na(beta_sim),
          dv_base > 0, price_rel_base > 0) %>%
   mutate(
-    # Variação observada e predita (em log)
+    # Observed and predicted change (in logs)
     delta_log_dv_obs  = log(dv_obs)         - log(dv_base),
     delta_log_price   = log(price_rel_test)  - log(price_rel_base),
     delta_log_dv_pred = beta_sim * delta_log_price,
 
-    # Resíduo e acerto de sinal
+    # Residual and sign hit
     residuo      = delta_log_dv_obs - delta_log_dv_pred,
     sign_correct = sign(delta_log_dv_obs) == sign(delta_log_dv_pred)
   ) %>%
@@ -125,13 +125,13 @@ delta_df <- test_df %>%
          is.finite(delta_log_dv_pred),
          is.finite(residuo))
 
-cat(sprintf("  Pares usados na validação delta: %d\n", nrow(delta_df)))
+cat(sprintf("  Pairs used in delta validation: %d\n", nrow(delta_df)))
 
 if (nrow(delta_df) < 4) {
-  cat("  [04b] Dados insuficientes — pulando métricas.\n")
+  cat("  [04b] Insufficient data — skipping metrics.\n")
 } else {
 
-# ── 5. Métricas por ano × país ────────────────────────────────────────────────
+# ── 5. Metrics by year × country ────────────────────────────────────────────────
 .calc_metricas_delta <- function(d) {
   n <- nrow(d)
   if (n < 3) return(tibble(n = n, cor = NA_real_, slope = NA_real_,
@@ -150,9 +150,9 @@ if (nrow(delta_df) < 4) {
   )
 }
 
-# ── Métricas por grupo: geral, focal, outros, e focal individual ──────────────
+# ── Metrics by group: overall, focal, others, and individual focal ──────────────
 
-# Geral (todos os exportadores) — por ano + pooled
+# Overall (all exporters) — by year + pooled
 metricas_geral_ano <- delta_df %>%
   group_by(ano = as.character(year)) %>%
   group_modify(~ .calc_metricas_delta(.x)) %>%
@@ -164,7 +164,7 @@ metricas_geral_pool <- .calc_metricas_delta(delta_df) %>%
 
 metricas_geral <- bind_rows(metricas_geral_ano, metricas_geral_pool)
 
-# Por grupo focal / outros — por ano + pooled
+# By focal group / others — by year + pooled
 metricas_grupos_ano <- delta_df %>%
   group_by(ano = as.character(year), grupo = grupo_exporter) %>%
   group_modify(~ .calc_metricas_delta(.x)) %>%
@@ -178,7 +178,7 @@ metricas_grupos_pool <- delta_df %>%
 
 metricas_grupos <- bind_rows(metricas_grupos_ano, metricas_grupos_pool)
 
-# Por país focal individualmente
+# By individual focal country
 metricas_focais <- delta_df %>%
   filter(grupo_exporter == "focal") %>%
   group_by(ano = as.character(year), exporter) %>%
@@ -198,27 +198,27 @@ metricas_total <- bind_rows(metricas_geral, metricas_grupos, metricas_focais) %>
   mutate(setor = produto_ativo) %>%
   arrange(grupo, ano)
 
-cat("\n  ── Métricas delta: todos os exportadores ──\n")
-cat("  [geral = todos | focal = BR+AR | outros = restante]\n\n")
+cat("\n  ── Delta metrics: all exporters ──\n")
+cat("  [geral = all | focal = BR+AR | outros = rest]\n\n")
 print(metricas_total, n = Inf)
 
-cat("\n  Interpretação:\n")
-cat("    cor > 0    → β captura a direção das variações de share\n")
+cat("\n  Interpretation:\n")
+cat("    cor > 0    → β captures the direction of share changes\n")
 cat("    slope ≈ 1  → β bem calibrado em magnitude\n")
 cat("    slope < 1  → β sobrestima a resposta (observado < previsto)\n")
 cat("    slope > 1  → β subestima a resposta (observado > previsto)\n")
-cat("    sign_acc   → % de pares com sinal correto (> 50% = acima do aleatório)\n\n")
+cat("    sign_acc   → % of pairs with the correct sign (> 50% = better than random)\n\n")
 
 # ── 6. Scatter Δlog(obs) × Δlog(pred) ────────────────────────────────────────
 lim_max <- delta_df %>%
   summarise(lim = max(abs(c(delta_log_dv_obs, delta_log_dv_pred)),
                       na.rm = TRUE) * 1.12) %>%
   pull(lim)
-lim_max <- max(lim_max, 0.1)   # mínimo para o gráfico não colapsar
+lim_max <- max(lim_max, 0.1)   # minimum so the chart does not collapse
 
 ncol_p <- min(3, length(anos_teste_val))
 
-# Classificar exportadores para o scatter: focal recebe rótulo, outros = cinza
+# Classify exporters for the scatter: focal gets a label, others = grey
 delta_plot_df <- delta_df %>%
   mutate(
     ano_label  = paste("Teste:", year),
@@ -239,36 +239,36 @@ p_delta <- ggplot(delta_plot_df,
   geom_vline(xintercept = 0, colour = "grey75", linewidth = 0.4) +
   geom_abline(slope = 1, intercept = 0,
               linetype = "dashed", colour = "grey30", linewidth = 0.8) +
-  # Pontos: outros em cinza, focais com cor
+  # Points: others in grey, focal ones coloured
   geom_point(data = ~ filter(.x, exp_label == "outros"),
              colour = "grey60", size = 1.2, alpha = 0.25) +
   geom_point(data = ~ filter(.x, exp_label != "outros"),
              aes(colour = exp_label), size = 2.8, alpha = 0.90) +
-  # Rótulo de produto só para focais
+  # Product label for focal only
   geom_text(data = ~ filter(.x, exp_label != "outros"),
             aes(label = product, colour = exp_label),
             size = 1.9, vjust = -0.65, show.legend = FALSE) +
-  # Regressão geral (todos)
+  # Overall regression (all)
   geom_smooth(method = "lm", formula = y ~ x, se = TRUE,
               colour = "black", linewidth = 0.8, alpha = 0.12,
               linetype = "solid") +
-  # Regressão focais
+  # Focal regression
   geom_smooth(data = ~ filter(.x, exp_label != "outros"),
               aes(colour = exp_label, group = exp_label),
               method = "lm", formula = y ~ x, se = FALSE,
               linewidth = 0.7, linetype = "dotted") +
-  scale_colour_manual(values = cores_scatter, name = "País") +
+  scale_colour_manual(values = cores_scatter, name = "Country") +
   coord_cartesian(xlim = c(-lim_max, lim_max),
                   ylim = c(-lim_max, lim_max)) +
   facet_wrap(~ ano_label, ncol = ncol_p) +
   labs(
-    title    = sprintf("Validação Δ — %s (share): β prediz variações?",
+    title    = sprintf("Delta validation — %s (share): does β predict changes?",
                        toupper(produto_ativo)),
-    subtitle = paste("Tracejada = calibração perfeita | Sólida preta = OLS geral",
-                     "| Pontilhada = OLS por país focal"),
-    x        = "Δlog(share) predito  [= β × Δlog(preço_rel)]",
-    y        = "Δlog(share) observado",
-    caption  = sprintf("Pontos cinzas = outros exportadores (β global) | Base: média %d–%d",
+    subtitle = paste("Dashed = perfect calibration | Solid black = overall OLS",
+                     "| Dotted = OLS by focal country"),
+    x        = "Predicted Δlog(share)  [= β × Δlog(price_rel)]",
+    y        = "Observed Δlog(share)",
+    caption  = sprintf("Grey points = other exporters (global β) | Base: mean %d–%d",
                        min(anos_base_val), max(anos_base_val))
   ) +
   theme_minimal(base_size = 11) +
@@ -304,8 +304,8 @@ write.csv(
   row.names = FALSE
 )
 
-cat(sprintf("  Salvo: 5c_validacao_delta_metricas.csv\n"))
-cat(sprintf("  Salvo: 5c_validacao_delta_scatter.png\n"))
+cat(sprintf("  Saved: 5c_validacao_delta_metricas.csv\n"))
+cat(sprintf("  Saved: 5c_validacao_delta_scatter.png\n"))
 
 }  # fim if nrow >= 4
 }  # fim if length(anos_teste_val) > 0

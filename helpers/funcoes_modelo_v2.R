@@ -1,14 +1,14 @@
 ############################################
 # helpers/funcoes_modelo_v2.R
 # ----------------------------------------
-# Versão 2: inclui restrição de sinal no shrinkage.
-# Se beta_sim > 0, censura beta_country em 0 antes do shrinkage:
+# Version 2: includes a sign constraint in the shrinkage.
+# If beta_sim > 0, censors beta_country at 0 before the shrinkage:
 #   beta_sim_corr = (1 - w) * beta_global
-# Garante beta negativo mas menos elástico que o global (mais próximo de zero).
-# Afeta apenas: 260112-BR (ferro) e 250700-AR (cimento).
+# Guarantees a negative beta that is less elastic than the global one (closer to zero).
+# Affects only: 260112-BR (iron) and 250700-AR (cement).
 ############################################
 
-# ── Formatação ────────────────────────────────────────────────────────────────
+# ── Formatting ────────────────────────────────────────────────────────────────
 
 sig_label <- function(p) {
   case_when(p < 0.01 ~ "***", p < 0.05 ~ "**", p < 0.10 ~ "*", TRUE ~ "")
@@ -22,7 +22,7 @@ fmt_coef <- function(b, se) {
   paste0(round(b, 3), sig, " (", round(se, 3), ")")
 }
 
-# ── Pesos temporais ───────────────────────────────────────────────────────────
+# ── Time weights ───────────────────────────────────────────────────────────
 
 preparar_pesos <- function(dados, usar_peso_tempo, half_life) {
   if (usar_peso_tempo) {
@@ -43,9 +43,9 @@ calcular_shrinkage <- function(se_global, se_dif) {
   se_global^2 / (se_global^2 + se_dif^2)
 }
 
-# ── Extração de betas globais por produto ─────────────────────────────────────
-# Recebe um modelo fixest com interação log_price_rel:factor(product)
-# Retorna tibble com product, beta_global, se_global
+# ── Extraction of global betas by product ─────────────────────────────────────
+# Takes a fixest model with the log_price_rel:factor(product) interaction
+# Returns a tibble with product, beta_global, se_global
 
 extrair_betas_globais <- function(model, prefixo_termo = "log_price_rel:factor\\(product\\)") {
   tidy(model) %>%
@@ -55,10 +55,10 @@ extrair_betas_globais <- function(model, prefixo_termo = "log_price_rel:factor\\
     mutate(product = str_trim(as.character(product)))
 }
 
-# ── Montagem do betas_simulacao com shrinkage ─────────────────────────────────
-# Recebe: todos_produtos, betas_globais, lista de betas_dif por país,
+# ── Building betas_simulacao with shrinkage ─────────────────────────────────
+# Takes: todos_produtos, betas_globais, list of betas_dif by country,
 #         paises_grupo, z_critico
-# Retorna: betas_simulacao com colunas beta_base, beta_dif_X, beta_X,
+# Returns: betas_simulacao with columns beta_base, beta_dif_X, beta_X,
 #          w_X, beta_sim_X, fonte_X
 
 montar_betas_simulacao <- function(todos_produtos, betas_globais,
@@ -92,7 +92,7 @@ montar_betas_simulacao <- function(todos_produtos, betas_globais,
           w_cod       <- .data[[paste0("w_", cod)]]
           beta_cod    <- .data[[paste0("beta_", cod)]]
           beta_sim_v1 <- w_cod * beta_cod + (1 - w_cod) * beta_base
-          # Restrição de sinal: se beta_sim > 0, censura beta_country em 0
+          # Sign constraint: if beta_sim > 0, censors beta_country at 0
           if_else(beta_sim_v1 > 0,
                   (1 - w_cod) * beta_base,
                   beta_sim_v1)
@@ -102,15 +102,15 @@ montar_betas_simulacao <- function(todos_produtos, betas_globais,
           beta_cod    <- .data[[paste0("beta_", cod)]]
           beta_sim_v1 <- w_cod * beta_cod + (1 - w_cod) * beta_base
           case_when(
-            is.na(.data[[se_dif_col]])  ~ "global (sem diferencial)",
-            beta_sim_v1 > 0             ~ paste0("censurado (beta_raw=",
+            is.na(.data[[se_dif_col]])  ~ "global (no differential)",
+            beta_sim_v1 > 0             ~ paste0("censored (beta_raw=",
                                                   round(beta_cod, 3),
                                                   ">0; corr=",
                                                   round(1 - w_cod, 3),
                                                   "*global)"),
-            w_cod >= 0.9                ~ "especifico (w>=0.9)",
+            w_cod >= 0.9                ~ "specific (w>=0.9)",
             w_cod <= 0.1                ~ "global (w<=0.1)",
-            TRUE                        ~ paste0("misto (w=", round(w_cod, 2), ")")
+            TRUE                        ~ paste0("mixed (w=", round(w_cod, 2), ")")
           )
         }
       )

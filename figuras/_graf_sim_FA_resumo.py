@@ -1,10 +1,10 @@
 """
-Figura-resumo Ferro & Aço: impacto físico (toneladas) vs. econômico (euros)
-ao longo do preço de carbono, MFN vs Mercosul, Brasil e Argentina.
+Iron & Steel summary figure: physical impact (tonnes) vs. economic impact (euros)
+across the carbon price, MFN vs Mercosul, Brazil and Argentina.
 
 Mostra a imagem espelhada:
-  Brasil    -> impacto em euros AMPLIFICA o físico (produtos de alto valor)
-  Argentina -> impacto em euros ATENUA o físico (produtos de menor valor)
+  Brazil    -> the euro impact AMPLIFIES the physical one (high-value products)
+  Argentina -> the euro impact DAMPENS the physical one (lower-value products)
 """
 import csv, sys
 import matplotlib.pyplot as plt
@@ -45,7 +45,7 @@ for ax, exp, nome in zip(axes, ['BR','AR'], ['Brazil','Argentina']):
     ax.plot(carb, eur_mer, color=COR_EUR, lw=1.8, marker='s', ms=6,
             ls='--', alpha=0.7, label='Value (€) — Mercosul')
 
-    # anotações nos pontos MFN extremos (115)
+    # annotations on the extreme MFN points (115)
     ax.annotate(f'{ton_mfn[-1]:.1f}%', (carb[-1], ton_mfn[-1]),
                 xytext=(6,0), textcoords='offset points', fontsize=8.5,
                 color=COR_TON, va='center', fontweight='bold')

@@ -1,29 +1,29 @@
 ############################################
 # helpers/10_auditoria_betas.R
 # ----------------------------------------
-# Auditoria de qualidade dos betas estimados.
-# Chamado ao final de 09_analise.R em qualquer modelo.
+# Quality audit of the estimated betas.
+# Called at the end of 09_analise.R for any model.
 #
-# Contexto necessário (já no ambiente):
+# Required context (already in the environment):
 #   betas_simulacao, df, anos_base, paises_grupo,
 #   setor_label, dir_output, z_critico
 #
-# Produz:
-#   41_auditoria_alertas.csv      — betas suspeitos
-#   41b_auditoria_betas.png       — dot plot com zona esperada
-#   42_auditoria_series.png       — séries log_price_rel vs share/DV
-#   43_auditoria_estabilidade.png — betas em janelas de 5 anos
+# Produces:
+#   41_auditoria_alertas.csv      — suspicious betas
+#   41b_auditoria_betas.png       — dot plot with expected zone
+#   42_auditoria_series.png       — log_price_rel vs share/DV series
+#   43_auditoria_estabilidade.png — betas in 5-year windows
 ############################################
 
-cat("\n[ 10 ] Auditoria de qualidade dos betas...\n")
+cat("\n[ 10 ] Beta quality audit...\n")
 
-# Parâmetros de alerta
-beta_sinal_errado <- 0          # beta > 0 é suspeito para commodities
-beta_magnitude_max <- 8         # |beta| > 8 merece atenção
-p_value_max <- 0.20             # p > 0.20 = fraco suporte empírico
-zona_esperada <- c(-5, -0.5)   # faixa plausível para commodities
+# Alert parameters
+beta_sinal_errado <- 0          # beta > 0 is suspicious for commodities
+beta_magnitude_max <- 8         # |beta| > 8 deserves attention
+p_value_max <- 0.20             # p > 0.20 = weak empirical support
+zona_esperada <- c(-5, -0.5)   # plausible range for commodities
 
-# ── 1. Volume médio por produto (base para ordenação) ──────────────────────────
+# ── 1. Mean volume by product (basis for ordering) ──────────────────────────
 
 ton_prod <- df %>%
   filter(year %in% anos_base) %>%
@@ -43,13 +43,13 @@ betas_audit <- betas_simulacao %>%
     n_alertas        = as.integer(alerta_sinal) + as.integer(alerta_magnitude) + as.integer(alerta_p),
     gravidade        = case_when(
       n_alertas == 0 ~ "OK",
-      n_alertas == 1 ~ "Atenção",
-      TRUE           ~ "Crítico"
+      n_alertas == 1 ~ "Warning",
+      TRUE           ~ "Critical"
     )
   ) %>%
   arrange(desc(n_alertas), desc(ton_base_prod))
 
-# Resumo
+# Summary
 n_alertas_total <- sum(betas_audit$n_alertas > 0, na.rm = TRUE)
 n_sinal  <- sum(betas_audit$alerta_sinal,     na.rm = TRUE)
 n_mag    <- sum(betas_audit$alerta_magnitude, na.rm = TRUE)
@@ -80,19 +80,19 @@ write.csv(
   row.names = FALSE
 )
 
-# ── 2. Dot plot dos betas com zona esperada ────────────────────────────────────
+# ── 2. Dot plot of betas with expected zone ────────────────────────────────────
 
 p_audit_betas <- betas_audit %>%
   mutate(
     product_f = factor(product, levels = rev(product[order(ton_base_prod)])),
     cor_ponto = case_when(
-      gravidade == "Crítico"  ~ "#D62728",
-      gravidade == "Atenção"  ~ "#FF7F0E",
+      gravidade == "Critical"  ~ "#D62728",
+      gravidade == "Warning"  ~ "#FF7F0E",
       TRUE                   ~ "#1F77B4"
     )
   ) %>%
   ggplot(aes(x = beta_base, y = product_f)) +
-  # Zona esperada para commodities
+  # Expected zone for commodities
   annotate("rect",
            xmin = zona_esperada[1], xmax = zona_esperada[2],
            ymin = -Inf, ymax = Inf,
@@ -111,19 +111,19 @@ p_audit_betas <- betas_audit %>%
                                   arrange(desc(ton_base_prod)) %>%
                                   pull(product) %>%
                                   rev()))]) +
-  # Pontos coloridos por gravidade
+  # Points coloured by severity
   geom_point(aes(size = ton_base_prod / 1e3, color = gravidade), alpha = 0.9) +
   scale_color_manual(
-    values = c("OK" = "#1F77B4", "Atenção" = "#FF7F0E", "Crítico" = "#D62728"),
-    name   = "Diagnóstico"
+    values = c("OK" = "#1F77B4", "Warning" = "#FF7F0E", "Critical" = "#D62728"),
+    name   = "Diagnosis"
   ) +
-  scale_size_continuous(name = "Volume base\n(mil ton)", range = c(2, 8)) +
+  scale_size_continuous(name = "Base volume\n(thousand ton)", range = c(2, 8)) +
   labs(
-    title    = paste("Auditoria de betas —", setor_label),
-    subtitle = sprintf("Zona verde = faixa esperada [%.1f, %.1f] | Tamanho ∝ volume | N=%d alertas",
+    title    = paste("Beta audit —", setor_label),
+    subtitle = sprintf("Green zone = expected range [%.1f, %.1f] | Size ∝ volume | N=%d alerts",
                        zona_esperada[1], zona_esperada[2], n_alertas_total),
-    x = "β (elasticidade preço-demanda)", y = NULL,
-    caption = "Vermelho = crítico (≥2 alertas) | Laranja = atenção (1 alerta) | Azul = OK"
+    x = "β (price-demand elasticity)", y = NULL,
+    caption = "Red = critical (≥2 alerts) | Orange = warning (1 alert) | Blue = OK"
   ) +
   theme_minimal(base_size = 11) +
   theme(plot.title      = element_text(face = "bold"),
@@ -136,16 +136,16 @@ ggsave(file.path(dir_output, "41b_auditoria_betas.png"),
        height = max(5, nrow(betas_audit) * 0.38 + 2),
        dpi    = 150)
 
-# ── 3. Séries temporais: log_price_rel vs DV (top-10 por volume) ───────────────
+# ── 3. Time series: log_price_rel vs DV (top-10 by volume) ───────────────
 
-cat("\n  Séries temporais para top-10 produtos por volume...\n")
+cat("\n  Time series for the top-10 products by volume...\n")
 
 top_produtos <- ton_prod %>%
   arrange(desc(ton_base_prod)) %>%
   slice_head(n = 10) %>%
   pull(product)
 
-# Detectar DV do modelo (share ou ton)
+# Detect the model DV (share or ton)
 tem_share <- "share" %in% names(df)
 dv_col    <- if (tem_share && !all(is.na(df$share))) "share" else "ton"
 dv_label  <- if (dv_col == "share") "Market share" else "Volume (ton)"
@@ -156,7 +156,7 @@ series_df <- df %>%
   select(exporter, product, year, log_price_rel, dv = all_of(dv_col))
 
 if (nrow(series_df) > 0) {
-  # Normalizar DV para comparação visual na mesma escala
+  # Normalise DV for visual comparison on the same scale
   series_norm <- series_df %>%
     group_by(exporter, product) %>%
     mutate(
@@ -168,7 +168,7 @@ if (nrow(series_df) > 0) {
     ungroup() %>%
     pivot_longer(cols = c(dv_norm, price_norm),
                  names_to  = "serie",
-                 values_to = "valor") %>%
+                 values_to = "value") %>%
     mutate(
       serie = if_else(serie == "price_norm", "log_price_rel (norm.)",
                       paste0(dv_label, " (norm.)")),
@@ -177,13 +177,13 @@ if (nrow(series_df) > 0) {
 
   n_combos <- n_distinct(series_norm$produto_pais)
 
-  # ncol cresce com o nº de combinações (produto x país) para manter a
-  # altura do plot dentro do limite de 50" do ggsave quando paises_grupo
-  # é grande.
+  # ncol grows with the number of combinations (product x country) to keep
+  # the plot height within the 50" ggsave limit when paises_grupo
+  # is large.
   ncol_series <- if (n_combos > 60) 6 else if (n_combos > 30) 4 else 2
 
   p_series <- series_norm %>%
-    ggplot(aes(x = year, y = valor, color = serie, group = serie)) +
+    ggplot(aes(x = year, y = value, color = serie, group = serie)) +
     geom_line(linewidth = 0.8, alpha = 0.85) +
     geom_point(size = 1.5, alpha = 0.7) +
     geom_hline(yintercept = 0, linetype = "dotted", color = "gray60") +
@@ -193,10 +193,10 @@ if (nrow(series_df) > 0) {
       name   = NULL
     ) +
     labs(
-      title    = paste("Séries temporais: preço relativo vs", dv_label, "—", setor_label),
-      subtitle = "Variáveis normalizadas (z-score) para comparação visual | Se movem em oposição → beta negativo esperado",
-      x = NULL, y = "Desvios padrão da média",
-      caption  = paste("Top-10 produtos por volume | Países:", paste(paises_grupo, collapse = ", "))
+      title    = paste("Time series: relative price vs", dv_label, "—", setor_label),
+      subtitle = "Normalised variables (z-score) for visual comparison | Moving in opposition → negative beta expected",
+      x = NULL, y = "Standard deviations from the mean",
+      caption  = paste("Top-10 products by volume | Countries:", paste(paises_grupo, collapse = ", "))
     ) +
     theme_minimal(base_size = 10) +
     theme(
@@ -211,12 +211,12 @@ if (nrow(series_df) > 0) {
          width  = min(49, max(14, ncol_series * 7)),
          height = min(49, max(8, ceiling(n_combos / ncol_series) * 3.5)),
          dpi    = 150)
-  cat(sprintf("  Séries geradas: %d combinações produto × país\n", n_combos))
+  cat(sprintf("  Series generated: %d product × country combinations\n", n_combos))
 } else {
-  cat("  Aviso: sem dados para plotar séries temporais.\n")
+  cat("  Warning: no data to plot the time series.\n")
 }
 
-# ── 4. Estabilidade temporal — janelas de 5 anos ──────────────────────────────
+# ── 4. Temporal stability, 5-year windows ──────────────────────────────
 
 cat("\n  Estabilidade temporal do beta global...\n")
 
@@ -225,7 +225,7 @@ janela_est       <- 5
 
 if (length(anos_disponiveis) >= janela_est + 1) {
 
-  # Determinar o regressor principal do modelo
+  # Determine the main regressor of the model
   regressor_col <- case_when(
     "d_log_price_rel"    %in% names(df) &&
       sum(!is.na(df$d_log_price_rel)) > 0     ~ "d_log_price_rel",
@@ -297,12 +297,12 @@ if (length(anos_disponiveis) >= janela_est + 1) {
       geom_point(color = "#1F77B4", size = 3) +
       scale_y_continuous(breaks = scales::pretty_breaks(n = 6)) +
       labs(
-        title    = paste("Estabilidade temporal do beta —", setor_label),
-        subtitle = paste0("Beta global ponderado por precisão | Janelas de ", janela_est,
-                          " anos | Regressor: ", regressor_label),
-        x = paste0("Janela (", janela_est, " anos)"),
-        y = "β global (ponderado por precisão)",
-        caption = "Zona verde = faixa esperada para commodities | Barras = IC 95%"
+        title    = paste("Temporal stability of the beta —", setor_label),
+        subtitle = paste0("Precision-weighted global beta | Windows of ", janela_est,
+                          " years | Regressor: ", regressor_label),
+        x = paste0("Window (", janela_est, " years)"),
+        y = "Global β (precision-weighted)",
+        caption = "Green zone = expected range for commodities | Bars = 95% CI"
       ) +
       theme_minimal(base_size = 11) +
       theme(
@@ -314,7 +314,7 @@ if (length(anos_disponiveis) >= janela_est + 1) {
     ggsave(file.path(dir_output, "43_auditoria_estabilidade.png"),
            p_estab, width = 10, height = 5, dpi = 150)
 
-    cat(sprintf("  Janelas estimadas: %d | Beta médio: %.4f | Range: [%.4f, %.4f]\n",
+    cat(sprintf("  Windows estimated: %d | Mean beta: %.4f | Range: [%.4f, %.4f]\n",
                 nrow(betas_janela),
                 mean(betas_janela$beta_global, na.rm = TRUE),
                 min(betas_janela$beta_global,  na.rm = TRUE),
@@ -324,10 +324,10 @@ if (length(anos_disponiveis) >= janela_est + 1) {
               file.path(dir_output, "43b_auditoria_estabilidade.csv"),
               row.names = FALSE)
   } else {
-    cat("  Aviso: poucos dados para estabilidade temporal.\n")
+    cat("  Warning: too little data for temporal stability.\n")
   }
 } else {
-  cat(sprintf("  Aviso: menos de %d anos disponíveis — estabilidade temporal pulada.\n",
+  cat(sprintf("  Warning: fewer than %d years available, temporal stability skipped.\n",
               janela_est + 1))
 }
 

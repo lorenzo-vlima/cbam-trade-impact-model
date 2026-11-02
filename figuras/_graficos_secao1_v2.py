@@ -1,6 +1,6 @@
 """
-v2 — desenhado para aparecer legível em Word (portrait A4 ~17cm largura).
-Princípio: figura pequena (10 pol.) + fontes grandes = texto legível após escalar.
+v2: designed to be legible in Word (portrait A4, ~17 cm wide).
+Principle: small figure (10 in.) + large fonts = legible text after scaling.
 """
 import sys
 import matplotlib.pyplot as plt
@@ -32,7 +32,7 @@ grupos_CE = [
     ('Clay',              -1.611, -0.188, -1.485, 100.0, 100.0),
 ]
 
-# Cor = setor (mesma para Brasil e Argentina); forma = país
+# Colour = sector (same for Brazil and Argentina); shape = country
 COR_FA = '#2c6e9e'
 COR_AL = '#c0392b'
 COR_CE = '#27ae60'
@@ -113,7 +113,7 @@ def plot_painel(ax, grupos, cor_br, cor_ar, titulo, setor_key,
                     color='#666666', ha='center', va='top', zorder=7,
                     clip_on=False, bbox=LBBOX)
 
-    # Linhas de β setorial: país (colorido) + global (cinza)
+    # Sector β lines: country (coloured) + global (grey)
     for pais, col, ytext in [('BR', cor_br, 0.42), ('AR', cor_ar, 0.24)]:
         b = beta_setor[setor_key][pais]
         ax.axvline(b, color=col, linewidth=1.2, linestyle=':', alpha=0.6, zorder=0)
@@ -173,4 +173,4 @@ fig.suptitle('Estimated market share price elasticities by product group\n— Br
 plt.tight_layout(w_pad=2.5, rect=[0, 0.13, 1, 1])
 plt.savefig(out + 'G1_elasticidades_grupos_v2.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_grupos_v2.png')
+print('Saved: G1_elasticidades_grupos_v2.png')

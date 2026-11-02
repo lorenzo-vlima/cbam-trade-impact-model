@@ -1,5 +1,5 @@
 """
-Correção de betas positivos por shrinkage censurado.
+Correction of positive betas through censored shrinkage.
 
 Para produtos onde beta_sim > 0 (diferencial positivo contra a teoria),
 aplica censura do beta bruto em zero ANTES do shrinkage:
@@ -9,8 +9,8 @@ aplica censura do beta bruto em zero ANTES do shrinkage:
 Em vez de:
     beta_sim = w * beta_BR + (1-w) * beta_global   [com beta_BR > 0]
 
-Resultado: valor negativo, menos elástico que o global (mais próximo de zero),
-consistente com a hipótese de que o diferencial país-específico é no máximo zero.
+Result: a negative value, less elastic than the global one (closer to zero),
+consistent with the hypothesis that the country-specific differential is at most zero.
 """
 
 import csv, sys, math
@@ -66,14 +66,14 @@ for pasta in setores:
         writer.writeheader()
         writer.writerows(rows_out)
 
-    print(f'Salvo: {path_out.split("/outputs/")[1]}')
+    print(f'Saved: {path_out.split("/outputs/")[1]}')
 
 print()
 if correcoes:
-    print('Correções aplicadas:')
-    print(f'  {"Setor":<10} {"Produto":<10} {"País":<5} {"beta_sim_orig":>14} {"beta_corrigido":>14} {"w":>6} {"global":>8}')
+    print('Corrections applied:')
+    print(f'  {"Sector":<10} {"Product":<10} {"Country":<5} {"beta_sim_orig":>14} {"beta_corrigido":>14} {"w":>6} {"global":>8}')
     print('  ' + '-' * 65)
     for s, p, pa, bo, bc, w, bg in correcoes:
         print(f'  {s:<10} {p:<10} {pa:<5} {bo:>14.4f} {bc:>14.4f} {w:>6.3f} {bg:>8.4f}')
 else:
-    print('Nenhuma correção necessária.')
+    print('No correction needed.')

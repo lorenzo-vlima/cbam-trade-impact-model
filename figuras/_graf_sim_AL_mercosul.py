@@ -1,7 +1,7 @@
 """
-Figura-resumo Alumínio: o efeito Mercosul inverte o sinal.
-Brasil — Δ share sob MFN (perda) vs. Mercosul (ganho/neutralização).
-A eliminação da tarifa MFN (~6%) compensa o custo CBAM (~6% a 75€).
+Aluminium summary figure: the Mercosul effect reverses the sign.
+Brazil: Δ share under MFN (loss) vs. Mercosul (gain/neutralisation).
+Removing the MFN tariff (~6%) offsets the CBAM cost (~6% at EUR 75).
 """
 import csv, sys
 import matplotlib.pyplot as plt

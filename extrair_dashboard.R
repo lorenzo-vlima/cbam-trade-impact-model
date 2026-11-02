@@ -1,15 +1,15 @@
 ############################################
 # extrair_dashboard.R
 # ----------------------------------------
-# Consolida os resultados das 3 rodadas "cesta_padrao"
-# (ferro_aco, aluminio, cimento) em um unico JSON para
-# alimentar o dashboard HTML interativo.
+# Consolidates the results of the 3 "cesta_padrao" runs
+# (ferro_aco, aluminio, cimento) into a single JSON file to
+# feed an interactive HTML dashboard.
 #
-# NAO reroda o modelo PPML/simulacao (pesado). So reusa
-# 01_limpeza.R (limpeza generica, independente de paises_grupo
-# quando share_min_pais = NULL) para reconstruir a base "df"
-# limpa e calcular o bloco de pizza (cesta / UE-EEE-CH / Outros),
-# que o pipeline oficial nao salva em CSV.
+# Does NOT re-run the PPML model/simulation (heavy). It only reuses
+# 01_limpeza.R (generic cleaning, independent of paises_grupo
+# when share_min_pais = NULL) to rebuild the cleaned "df"
+# and compute the pie block (basket / EU-EEA-CH / Others),
+# which the official pipeline does not save to CSV.
 ############################################
 
 pkgs <- c("tidyverse", "jsonlite")
@@ -30,21 +30,21 @@ setores <- list(
   ferro_aco = list(
     paises = c("RU","UA","BR","CA","CN","TR","GB","IN","KR","TW","AR"),
     dir_out = "outputs/ferro_aco_cesta_padrao_individual_post_tax_j3_v2",
-    label = "Ferro & Aço"
+    label = "Iron & Steel"
   ),
   aluminio = list(
     paises = c("RU","CN","GB","MZ","AE","TR","BH","IN","CA","EG","BR","AR"),
     dir_out = "outputs/aluminio_cesta_padrao_individual_post_tax_j3_v2",
-    label = "Alumínio"
+    label = "Aluminium"
   ),
   cimento = list(
     paises = c("TR","UA","GB","BR","US","DZ","CN","EG","TN","BY","AR"),
     dir_out = "outputs/cimento_cesta_padrao_individual_post_tax_j3_v2",
-    label = "Cimento"
+    label = "Cement"
   )
 )
 
-# Config fixa do main_v2.R (independente de paises_grupo)
+# Fixed config from main_v2.R (independent of paises_grupo)
 ano_inicio <- 2010
 ano_corte  <- 2025
 filtro_vol <- 1
@@ -56,7 +56,7 @@ winsor_price_rel <- 0.01
 janela_base <- 3
 anos_base <- seq(ano_corte - janela_base + 1, ano_corte)
 
-# funcao "registrar" e usada dentro de 01_limpeza.R (tracking) — stub no-op
+# the "registrar" function is used inside 01_limpeza.R (tracking), no-op stub
 registrar <- function(...) invisible(NULL)
 
 resultado_geral <- list()
@@ -69,15 +69,15 @@ for (nome_setor in names(setores)) {
 
   cat("== ", nome_setor, " ==\n")
 
-  # ---- 0. Rotulos de grupo de produto (config/<setor>_grupos.R) ----
+  # ---- 0. Product group labels (config/<sector>_grupos.R) ----
   grupo_map <- NULL
   source(file.path(dir_config, paste0(nome_setor, "_grupos.R")), encoding = "UTF-8")
   produto_labels <- setNames(as.list(grupo_map$grupo_label), grupo_map$product)
 
-  # ---- 1. Reconstroi df limpo (identico ao usado no pipeline oficial) ----
+  # ---- 1. Rebuild the cleaned df (identical to the one used in the official pipeline) ----
   source(file.path(dir_scripts, "01_limpeza.R"))
 
-  # ---- 2. Ton base por exportador (media anual, janela 2023-2025) ----
+  # ---- 2. Base ton by exporter (annual mean, 2023-2025 window) ----
   ton_base_exportador <- df %>%
     filter(year %in% anos_base) %>%
     group_by(exporter) %>%
@@ -99,13 +99,13 @@ for (nome_setor in names(setores)) {
     summarise(ton = sum(ton, na.rm = TRUE), .groups = "drop") %>%
     mutate(share_pct = ton / sum(ton) * 100)
 
-  # ton base fixo para UE/Outros (usado tambem nos cenarios simulados)
+  # fixed base ton for EU/Others (also used in the simulated scenarios)
   ton_ue_base     <- base_categ$ton[base_categ$categoria == "UE_EEE_CH"]
   ton_outros_base <- base_categ$ton[base_categ$categoria == "Outros"]
   if (length(ton_ue_base) == 0) ton_ue_base <- 0
   if (length(ton_outros_base) == 0) ton_outros_base <- 0
 
-  # ---- 3. Le resumo por pais x cenario (13_cbam_resumo_pais.csv) ----
+  # ---- 3. Read summary by country x scenario (13_cbam_resumo_pais.csv) ----
   resumo_pais <- read.csv(file.path(cfg$dir_out, "13_cbam_resumo_pais.csv"),
                            stringsAsFactors = FALSE)
   emissoes    <- read.csv(file.path(cfg$dir_out, "40_emissoes_resumo.csv"),
@@ -126,7 +126,7 @@ for (nome_setor in names(setores)) {
     distinct(cenario_carbono, cenario_tarifa) %>%
     arrange(cenario_carbono, cenario_tarifa)
 
-  # ---- 4. Pizza simulada por cenario ----
+  # ---- 4. Simulated pie by scenario ----
   pizza_por_cenario <- pmap(cenarios, function(cenario_carbono, cenario_tarifa) {
     linha <- resumo_pais %>%
       filter(cenario_carbono == !!cenario_carbono, cenario_tarifa == !!cenario_tarifa)
@@ -148,7 +148,7 @@ for (nome_setor in names(setores)) {
     )
   })
 
-  # ---- 5. Monta lista por pais x cenario para o dashboard ----
+  # ---- 5. Build list by country x scenario for the dashboard ----
   paises_dados <- resumo_pais %>%
     transmute(
       exporter, cenario_carbono = as.character(cenario_carbono),
@@ -161,7 +161,7 @@ for (nome_setor in names(setores)) {
       ton_base_total, euro_base_total
     )
 
-  # ---- 6. Detalhe por produto (drill-down por pais) ----
+  # ---- 6. Product detail (drill-down by country) ----
   produtos_dados <- produtos_raw %>%
     transmute(
       exporter, product = as.character(product),
@@ -181,7 +181,7 @@ for (nome_setor in names(setores)) {
       fator_emissao, beta_usado, ton_base
     )
 
-  # ---- 7. Realocacao pura (tecnologia fixa) x tecnologia verde ----
+  # ---- 7. Pure reallocation (fixed technology) x green technology ----
   realoc_cesta <- produtos_raw %>%
     group_by(cenario_carbono, cenario_tarifa) %>%
     summarise(
@@ -249,4 +249,4 @@ for (nome_setor in names(setores)) {
 }
 
 write_json(resultado_geral, "dashboard_data.json", auto_unbox = TRUE, pretty = TRUE, na = "null")
-cat("\nSalvo: dashboard_data.json\n")
+cat("\nSaved: dashboard_data.json\n")

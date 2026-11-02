@@ -1,27 +1,27 @@
 ############################################
 # 07_simulacao_cbam.R
 # ----------------------------------------
-# Simulação do impacto do CBAM sobre o
-# market share dos países em paises_grupo.
+# Simulation of the CBAM impact on the
+# market share of the countries in paises_grupo.
 #
-# Produz 6 cenários = 3 níveis de carbono
+# Produces 6 scenarios = 3 carbon price levels
 # × 2 regimes de tarifa (MFN | Mercosul).
 #
-# Normalização competitiva:
-#   shares simulados de TODOS os exportadores
-#   são normalizados por produto para fechar em 1.
-#   - paises_grupo: usa beta_sim (shrinkage)
-#   - demais:       usa beta_base (global)
-#   Garante consistência contábil e econômica:
-#   se BR ganha share, alguém perde.
+# Competitive normalisation:
+#   simulated shares of ALL exporters
+#   are normalised by product so that they sum to 1.
+#   - paises_grupo: uses beta_sim (shrinkage)
+#   - others:       use beta_base (global)
+#   Guarantees accounting and economic consistency:
+#   if BR gains share, someone loses.
 #
 # Depende de: 01_limpeza.R, 02_modelo.R,
 #             03_paises.R
 ############################################
 
-cat("[ 07 ] Simulação CBAM — 6 cenários...\n")
+cat("[ 07 ] CBAM simulation — 6 scenarios...\n")
 
-# ── Países isentos do CBAM (custo = 0) ───────────────────────────────────────
+# ── Countries exempt from CBAM (cost = 0) ───────────────────────────────────────
 paises_isentos_cbam <- c(
   "AT","BE","BG","CY","CZ","DE","DK","EE","ES","FI",
   "FR","GR","HR","HU","IE","IT","LT","LU","LV","MT",
@@ -29,7 +29,7 @@ paises_isentos_cbam <- c(
   "IS","LI","NO","CH"
 )
 
-# ── 1. Carregar fatores de emissão — todos os países ─────────────────────────
+# ── 1. Load emission factors — all countries ─────────────────────────
 
 arquivo_fatores <- switch(produto_ativo,
                           "aluminio"  = file.path(dir_config, "Base_fatores_aluminio_ajustada.csv"),
@@ -49,21 +49,21 @@ fatores_raw <- read.csv(file = arquivo_fatores, header = TRUE, sep = ";") %>%
 
 fn_agregar <- if (premissa_agregacao == "maximo") max else mean
 
-# Fator ROW por produto (fallback)
+# ROW factor by product (fallback)
 fatores_row <- fatores_raw %>%
   filter(exporter == "ROW", !is.na(.data[[fase_cbam]])) %>%
   group_by(product) %>%
   summarise(fator_row = fn_agregar(.data[[fase_cbam]], na.rm = TRUE),
             .groups = "drop")
 
-# Fatores agregados por país × produto (todos os países)
+# Aggregated factors by country × product (all countries)
 fatores_todos <- fatores_raw %>%
   filter(exporter != "ROW", !is.na(.data[[fase_cbam]])) %>%
   group_by(exporter, product) %>%
   summarise(fator_emissao = fn_agregar(.data[[fase_cbam]], na.rm = TRUE),
             .groups = "drop")
 
-# ── 2. Pares modelo com fatores (só paises_grupo) ────────────────────────────
+# ── 2. Model pairs with factors (paises_grupo only) ────────────────────────────
 
 pares_modelo <- df %>%
   filter(exporter %in% paises_grupo) %>%
@@ -84,11 +84,11 @@ fatores_grupo <- pares_modelo %>%
   ) %>%
   select(-fator_row)
 
-registrar(fatores_grupo, "07", "10. pares modelo com fator emissão",
-          nota = paste0(
-            "especifico: ", sum(fatores_grupo$fonte_fator == "especifico"),
+registrar(fatores_grupo, "07", "10. model pairs with emission factor",
+          note = paste0(
+            "specific: ", sum(fatores_grupo$fonte_fator == "especifico"),
             " | ROW: ",     sum(fatores_grupo$fonte_fator == "ROW"),
-            " | ausente: ", sum(fatores_grupo$fonte_fator == "ausente")
+            " | missing: ", sum(fatores_grupo$fonte_fator == "ausente")
           ))
 
 cat(sprintf(
@@ -98,9 +98,9 @@ cat(sprintf(
   sum(fatores_grupo$fonte_fator == "ausente")
 ))
 
-# ── 3. Função: calcular delta_log_price ──────────────────────────────────────
-# Retorna delta_log_price para TODOS os exportadores do painel
-# (não só paises_grupo) — necessário para normalização competitiva.
+# ── 3. Function: compute delta_log_price ──────────────────────────────────────
+# Returns delta_log_price for ALL exporters in the panel
+# (not only paises_grupo), needed for competitive normalisation.
 
 calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
   
@@ -146,7 +146,7 @@ calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
     ) %>%
     filter(!is.na(preco_2026))
   
-  # Totais por produto (todos os exportadores)
+  # Totals by product (all exporters)
   df_total_produto <- df_base %>%
     group_by(product) %>%
     summarise(
@@ -155,7 +155,7 @@ calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
       .groups = "drop"
     )
   
-  # Totais por país × produto
+  # Totals by country × product
   df_total_pais <- df_base %>%
     group_by(exporter, product) %>%
     summarise(
@@ -166,7 +166,7 @@ calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
       .groups = "drop"
     )
   
-  # LOO para TODOS os exportadores
+  # LOO for ALL exporters
   todos_exportadores <- unique(df_total_pais$exporter)
   
   resultado <- map_dfr(todos_exportadores, function(pais) {
@@ -202,34 +202,34 @@ calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
   resultado
 }
 
-# ── 4. Shares de referência — TODOS os exportadores ──────────────────────────
+# ── 4. Reference shares — ALL exporters ──────────────────────────
 
 anos_base <- seq(ano_corte - janela_base + 1, ano_corte)
 
-# Shares para paises_grupo (com beta_sim específico)
+# Shares for paises_grupo (with specific beta_sim)
 shares_ref_grupo <- df %>%
   filter(year %in% anos_base, exporter %in% paises_grupo) %>%
   group_by(exporter, product) %>%
   summarise(share_base = mean(share, na.rm = TRUE), .groups = "drop")
 
-# Shares para todos os exportadores (para normalização)
+# Shares for all exporters (for normalisation)
 shares_ref_todos <- df %>%
   filter(year %in% anos_base, product %in% produtos_grupo) %>%
   group_by(exporter, product) %>%
   summarise(share_base = mean(share, na.rm = TRUE), .groups = "drop")
 
-# Mantém shares_ref para compatibilidade com 08
+# Keeps shares_ref for compatibility with 08
 shares_ref <- shares_ref_grupo
 
-registrar(shares_ref_todos, "07", "11. shares de referência (todos exportadores)",
-          nota = paste0("janela: ", paste(anos_base, collapse = "-")))
+registrar(shares_ref_todos, "07", "11. reference shares (all exporters)",
+          note = paste0("window: ", paste(anos_base, collapse = "-")))
 
-cat(sprintf("  Shares de referência: média de %d ano(s) (%d–%d)\n",
+cat(sprintf("  Reference shares: mean of %d year(s) (%d–%d)\n",
             janela_base, min(anos_base), max(anos_base)))
-cat(sprintf("  Exportadores com share base: %d\n",
+cat(sprintf("  Exporters with base share: %d\n",
             n_distinct(shares_ref_todos$exporter)))
 
-# ── 5. Betas em formato longo (paises_grupo) ──────────────────────────────────
+# ── 5. Betas in long format (paises_grupo) ──────────────────────────────────
 
 betas_long <- map_dfr(paises_grupo, function(cod) {
   betas_simulacao %>%
@@ -241,7 +241,7 @@ betas_long <- map_dfr(paises_grupo, function(cod) {
     mutate(exporter = cod)
 })
 
-# ── 6. Calcular impacto — grid 6 cenários com normalização ───────────────────
+# ── 6. Compute impact — 6-scenario grid with normalisation ───────────────────
 
 grid_cenarios <- expand_grid(
   nome_carbono = names(cenarios_carbono),
@@ -252,13 +252,13 @@ resultados_cenarios <- pmap_dfr(grid_cenarios, function(nome_carbono, tarifa) {
   
   preco_co2 <- cenarios_carbono[nome_carbono]
   
-  # delta_log_price para todos os exportadores
+  # delta_log_price for all exporters
   price_rel_todos <- calcular_price_rel_2026(tarifa, fase_cbam, preco_co2)
   
-  # beta_base por produto (para resto do mundo)
+  # beta_base by product (for the rest of the world)
   beta_base_prod <- betas_simulacao %>% select(product, beta_base)
   
-  # Shares simulados para TODOS os exportadores
+  # Simulated shares for ALL exporters
   shares_sim_todos <- shares_ref_todos %>%
     left_join(price_rel_todos, by = c("exporter", "product")) %>%
     left_join(beta_base_prod,  by = "product") %>%
@@ -272,7 +272,7 @@ resultados_cenarios <- pmap_dfr(grid_cenarios, function(nome_carbono, tarifa) {
         share_base
       )
     ) %>%
-    # Normalizar por produto: shares fecham em 1
+    # Normalise by product: shares sum to 1
     group_by(product) %>%
     mutate(
       soma_sim       = sum(share_sim_raw, na.rm = TRUE),
@@ -284,7 +284,7 @@ resultados_cenarios <- pmap_dfr(grid_cenarios, function(nome_carbono, tarifa) {
     select(exporter, product, share_base, share_simulado,
            delta_log_price, beta_usado)
   
-  # Resultado final: só paises_grupo com metadados completos
+  # Final result: paises_grupo only, with complete metadata
   sim <- shares_sim_todos %>%
     filter(exporter %in% paises_grupo) %>%
     left_join(betas_long, by = c("exporter", "product")) %>%
@@ -311,7 +311,7 @@ resultados_cenarios <- pmap_dfr(grid_cenarios, function(nome_carbono, tarifa) {
   sim
 })
 
-# Converter para factor
+# Convert to factor
 resultados_cenarios <- resultados_cenarios %>%
   mutate(
     cenario_carbono = factor(cenario_carbono,
@@ -322,14 +322,14 @@ resultados_cenarios <- resultados_cenarios %>%
   )
 
 registrar_resumo(nrow(resultados_cenarios), "07",
-                 "12. resultados simulação (todas combinações)",
+                 "12. simulation results (all combinations)",
                  n_exp  = n_distinct(resultados_cenarios$exporter),
                  n_prod = n_distinct(resultados_cenarios$product),
-                 nota   = paste0(length(cenarios_carbono), " carbono × ",
+                 note   = paste0(length(cenarios_carbono), " carbon × ",
                                  length(cenarios_tarifa),
-                                 " tarifa | shares normalizados"))
+                                 " tariff | normalised shares"))
 
-cat(sprintf("  Cenários calculados: %d × %d = %d\n",
+cat(sprintf("  Scenarios computed: %d × %d = %d\n",
             length(cenarios_carbono), length(cenarios_tarifa),
             length(cenarios_carbono) * length(cenarios_tarifa)))
 
@@ -341,13 +341,13 @@ resumo_pais <- resultados_cenarios %>%
     n_products            = n(),
     custo_cbam_medio      = weighted.mean(custo_cbam_ton,  share_base, na.rm = TRUE),
     delta_log_price_medio = weighted.mean(delta_log_price, share_base, na.rm = TRUE),
-    # NÃO usar sum(share): somar shares de produtos diferentes não faz sentido.
-    # O share setorial correto é agregado em NÍVEL (volume) — ver bloco abaixo,
-    # onde é calculado a partir de ton_base_total / mercado setorial total.
+    # Do NOT use sum(share): adding shares of different products makes no sense.
+    # The correct sector share is aggregated at LEVEL (volume), see the block below,
+    # where it is computed from ton_base_total / total sector market.
     .groups = "drop"
   )
 
-# ── Volume e receita: converte share → ton/EUR usando mercado base ─────────────
+# ── Volume and revenue: converts share → ton/EUR using the base market ─────────────
 volume_mercado_07 <- df %>%
   filter(year %in% anos_base, product %in% produtos_grupo) %>%
   group_by(product) %>%
@@ -365,7 +365,7 @@ preco_cif_07 <- df %>%
     .groups   = "drop"
   )
 
-# Mercado setorial total (soma do volume de TODOS os produtos do setor),
+# Total sector market (sum of the volume of ALL sector products),
 # usado como denominador do share setorial correto.
 mercado_setorial_total <- sum(volume_mercado_07$ton_total_mercado, na.rm = TRUE)
 
@@ -393,9 +393,9 @@ ton_euro_pais <- resultados_cenarios %>%
                              delta_ton_total  / ton_base_total  * 100, NA_real_),
     delta_euro_pct = if_else(euro_base_total > 0,
                              delta_euro_total / euro_base_total * 100, NA_real_),
-    # ── SHARE SETORIAL CORRETO (volume) ──
-    # participação do país no volume TOTAL do setor importado pela UE.
-    # Agregação em nível: soma ton do país / soma ton do mercado.
+    # ── CORRECT SECTOR SHARE (volume) ──
+    # country share of the TOTAL sector volume imported by the EU.
+    # Level aggregation: country ton sum / market ton sum.
     share_base_total      = ton_base_total / mercado_setorial_total,
     share_sim_total       = ton_sim_total  / mercado_setorial_total,
     delta_share_pp_total  = share_sim_total - share_base_total,
@@ -413,7 +413,7 @@ resumo_product <- resultados_cenarios %>%
          beta_sim, fonte_beta, share_base, share_simulado,
          delta_share_pp, delta_share_pct)
 
-# ── 8. Imprimir tabela resumo ─────────────────────────────────────────────────
+# ── 8. Print summary table ─────────────────────────────────────────────────
 
 setor_label <- toupper(produto_ativo)
 
@@ -422,21 +422,21 @@ cat("  SIMULACAO CBAM —", setor_label,
     "| Grupo:", nome_grupo, "\n")
 cat(rep("=", 70), "\n\n", sep = "")
 
-cat("TABELA: Impacto agregado por país × carbono × tarifa\n")
+cat("TABLE: Aggregate impact by country × carbon × tariff\n")
 cat(rep("-", 70), "\n", sep = "")
 resumo_pais %>%
   mutate(
     `share_base (%)`  = round(share_base_total * 100,    3),
     `Δshare (pp)`     = round(delta_share_pp_total * 100, 3),
     `Δshare (%)`      = round(variacao_relativa_pct,      2),
-    `Δton (mil t)`    = round(delta_ton_total  / 1e3,     1),
+    `Δton (k t)`    = round(delta_ton_total  / 1e3,     1),
     `Δton (%)`        = round(delta_ton_pct,               2),
-    `ΔEUR (Mi €)`     = round(delta_euro_total / 1e6,      2),
+    `ΔEUR (EUR mn)`     = round(delta_euro_total / 1e6,      2),
     `ΔEUR (%)`        = round(delta_euro_pct,               2)
   ) %>%
   select(exporter, cenario_carbono, cenario_tarifa,
          `share_base (%)`, `Δshare (pp)`, `Δshare (%)`,
-         `Δton (mil t)`, `Δton (%)`, `ΔEUR (Mi €)`, `ΔEUR (%)`) %>%
+         `Δton (k t)`, `Δton (%)`, `ΔEUR (EUR mn)`, `ΔEUR (%)`) %>%
   arrange(exporter, cenario_tarifa, cenario_carbono) %>%
   print(n = Inf)
 
@@ -445,7 +445,7 @@ resumo_pais %>%
 write_csv(resumo_pais,    file.path(dir_output, "13_cbam_resumo_pais.csv"))
 write_csv(resumo_product, file.path(dir_output, "14_cbam_resumo_product.csv"))
 
-# ── 10. Gráficos ──────────────────────────────────────────────────────────────
+# ── 10. Charts ──────────────────────────────────────────────────────────────
 
 cores_carbono <- setNames(
   c("#4DAF4A", "#FF7F00", "#E41A1C"),
@@ -453,21 +453,21 @@ cores_carbono <- setNames(
 )
 cenario_medio <- levels(resultados_cenarios$cenario_carbono)[2]
 
-# Plot 1: variação relativa — todos os 6 cenários por país
+# Plot 1: relative change — all 6 scenarios by country
 p1 <- resumo_pais %>%
   ggplot(aes(x = cenario_carbono, y = variacao_relativa_pct,
              fill = cenario_carbono, alpha = cenario_tarifa)) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
   facet_wrap(~exporter) +
-  scale_fill_manual(values = cores_carbono, name = "Carbono") +
-  scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tarifa") +
+  scale_fill_manual(values = cores_carbono, name = "Carbon") +
+  scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tariff") +
   scale_y_continuous(labels = function(x) paste0(x, "%")) +
   labs(
-    title    = paste("Impacto do CBAM —", setor_label, "| 6 cenários"),
-    subtitle = paste("Grupo:", nome_grupo, "| Fase:", fase_cbam,
+    title    = paste("CBAM impact —", setor_label, "| 6 scenarios"),
+    subtitle = paste("Group:", nome_grupo, "| Fase:", fase_cbam,
                      "| Opaco = MFN | Transparente = Mercosul"),
-    x = "Cenário de carbono", y = "Variação relativa do share (%)"
+    x = "Carbon scenario", y = "Relative change in share (%)"
   ) +
   theme_minimal(base_size = 12) +
   theme(strip.text = element_text(face = "bold"),
@@ -478,10 +478,10 @@ p1 <- resumo_pais %>%
 ggsave(file.path(dir_output, "15_cbam_6cenarios_pais.png"),
        p1, width = min(24, max(10, 4 * length(paises_grupo))), height = 5, dpi = 150)
 
-# Plot 2: variação por produto — cenário médio, MFN vs Mercosul
+# Plot 2: change by product — middle scenario, MFN vs Mercosul
 source(file.path(dir_scripts, "helper_grupos.R"))
 
-# Resumo global do setor (aparece no topo do gráfico)
+# Sector-wide summary (shown at the top of the chart)
 resumo_setor <- resultados_cenarios %>%
   filter(cenario_carbono == cenario_medio) %>%
   group_by(exporter, cenario_tarifa) %>%
@@ -506,7 +506,7 @@ df_p2_base <- resultados_cenarios %>%
     cols_resumo = c("exporter", "cenario_tarifa")
   )
 
-# Extrai levels antes do bind_rows
+# Extract levels before bind_rows
 levels_produto <- levels(df_p2_base$product)
 
 resumo_setor <- resultados_cenarios %>%
@@ -539,14 +539,14 @@ p2 <- df_p2 %>%
   geom_point(alpha = 0.85, position = position_dodge(width = 0.4)) +
   facet_wrap(~exporter) +
   scale_colour_manual(values = c("MFN" = "#E41A1C", "Mercosul" = "#4DAF4A"),
-                      name = "Tarifa") +
-  scale_shape_manual(values = c("MFN" = 16, "Mercosul" = 17), name = "Tarifa") +
+                      name = "Tariff") +
+  scale_shape_manual(values = c("MFN" = 16, "Mercosul" = 17), name = "Tariff") +
   scale_size_manual(values = c("TRUE" = 4.5, "FALSE" = 2.5), guide = "none") +
   scale_x_continuous(labels = function(x) paste0(x, "%")) +
   labs(
     title    = paste(setor_label, ": MFN vs Mercosul —", cenario_medio),
-    subtitle = "Por grupo de produto | Pontos maiores = média ponderada do grupo | [Setor] = média geral",
-    x = "Variação do share (%)", y = NULL
+    subtitle = "By product group | Larger points = group weighted mean | [Sector] = overall mean",
+    x = "Change in share (%)", y = NULL
   ) +
   theme_minimal(base_size = 12) +
   theme(
@@ -561,7 +561,7 @@ p2 <- df_p2 %>%
 ggsave(file.path(dir_output, "16_cbam_mfn_vs_mercosul_produto.png"),
        p2, width = min(24, max(11, 5 * length(paises_grupo))), height = 6, dpi = 150)
 
-# ── 10b. Gráficos por métrica (share pp | share % | ton | ton % | EUR | EUR %) ─
+# ── 10b. Charts by metric (share pp | share % | ton | ton % | EUR | EUR %) ─
 
 w_plt <- min(24, max(10, 4 * length(paises_grupo)))   # largura base
 
@@ -572,14 +572,14 @@ w_plt <- min(24, max(10, 4 * length(paises_grupo)))   # largura base
     geom_col(position = position_dodge(width = 0.7), width = 0.6) +
     geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
     facet_wrap(~exporter) +
-    scale_fill_manual(values = cores_carbono, name = "Carbono") +
-    scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tarifa") +
+    scale_fill_manual(values = cores_carbono, name = "Carbon") +
+    scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tariff") +
     scale_y_continuous(labels = fmt) +
     labs(
       title    = paste("CBAM:", setor_label, "—", tit),
-      subtitle = paste("Grupo:", nome_grupo,
+      subtitle = paste("Group:", nome_grupo,
                        "| Opaco = MFN | Transparente = Mercosul"),
-      x = "Cenário de carbono", y = y_lab
+      x = "Carbon scenario", y = y_lab
     ) +
     theme_minimal(base_size = 12) +
     theme(strip.text = element_text(face = "bold"),
@@ -588,84 +588,84 @@ w_plt <- min(24, max(10, 4 * length(paises_grupo)))   # largura base
           legend.position = "bottom")
 }
 
-# — preparar colunas intermediárias em resumo_pais para os plots —
+# — prepare intermediate columns in resumo_pais for the plots —
 resumo_pais <- resumo_pais %>%
   mutate(
-    delta_share_pp_pct  = delta_share_pp_total * 100,   # pp → % para exibir
+    delta_share_pp_pct  = delta_share_pp_total * 100,   # pp → % for display
     delta_ton_mil       = delta_ton_total  / 1e3,
     delta_eur_mi        = delta_euro_total / 1e6
   )
 
 # Plot A — Δshare (pp)
 pA <- .bar_metrica("delta_share_pp_pct",  "Δ share (pp)",
-                   "Variação de market share (pp)",
+                   "Change in market share (pp)",
                    fmt = function(x) paste0(sprintf("%.2f", x), " pp"))
 ggsave(file.path(dir_output, "15b_cbam_delta_share_pp.png"),
        pA, width = w_plt, height = 5, dpi = 150)
 
 # Plot B — Δshare (%)
 pB <- .bar_metrica("variacao_relativa_pct", "Δ share (%)",
-                   "Variação relativa de market share (%)",
+                   "Relative change in market share (%)",
                    fmt = function(x) paste0(x, "%"))
 ggsave(file.path(dir_output, "15c_cbam_delta_share_pct.png"),
        pB, width = w_plt, height = 5, dpi = 150)
 
-# Plot C — Δton (mil t)
-pC <- .bar_metrica("delta_ton_mil", "Δ volume (mil t)",
-                   "Variação de volume (mil toneladas)",
-                   fmt = function(x) paste0(x, " mil t"))
+# Plot C — Δton (k t)
+pC <- .bar_metrica("delta_ton_mil", "Δ volume (thousand t)",
+                   "Change in volume (thousand tonnes)",
+                   fmt = function(x) paste0(x, " k t"))
 ggsave(file.path(dir_output, "15d_cbam_delta_ton_mil.png"),
        pC, width = w_plt, height = 5, dpi = 150)
 
 # Plot D — Δton (%)
 pD <- .bar_metrica("delta_ton_pct", "Δ volume (%)",
-                   "Variação relativa de volume (%)",
+                   "Relative change in volume (%)",
                    fmt = function(x) paste0(x, "%"))
 ggsave(file.path(dir_output, "15e_cbam_delta_ton_pct.png"),
        pD, width = w_plt, height = 5, dpi = 150)
 
-# Plot E — ΔEUR (Mi €)
-pE <- .bar_metrica("delta_eur_mi", "Δ receita (Mi €)",
-                   "Variação de receita exportadora (Mi €)",
-                   fmt = function(x) paste0(x, " Mi €"))
+# Plot E — ΔEUR (EUR mn)
+pE <- .bar_metrica("delta_eur_mi", "Δ revenue (EUR mn)",
+                   "Change in export revenue (EUR mn)",
+                   fmt = function(x) paste0(x, " mn EUR"))
 ggsave(file.path(dir_output, "15f_cbam_delta_eur_mi.png"),
        pE, width = w_plt, height = 5, dpi = 150)
 
 # Plot F — ΔEUR (%)
-pF <- .bar_metrica("delta_euro_pct", "Δ receita (%)",
-                   "Variação relativa de receita exportadora (%)",
+pF <- .bar_metrica("delta_euro_pct", "Δ revenue (%)",
+                   "Relative change in export revenue (%)",
                    fmt = function(x) paste0(x, "%"))
 ggsave(file.path(dir_output, "15g_cbam_delta_eur_pct.png"),
        pF, width = w_plt, height = 5, dpi = 150)
 
-# Plot G — Combinado: Δshare % | Δton % | ΔEUR % (facet por métrica)
+# Plot G — Combined: Δshare % | Δton % | ΔEUR % (facet by metric)
 resumo_long <- resumo_pais %>%
   select(exporter, cenario_carbono, cenario_tarifa,
          `Δ share (%)` = variacao_relativa_pct,
          `Δ volume (%)` = delta_ton_pct,
-         `Δ receita (%)` = delta_euro_pct) %>%
+         `Δ revenue (%)` = delta_euro_pct) %>%
   tidyr::pivot_longer(
-    cols      = c(`Δ share (%)`, `Δ volume (%)`, `Δ receita (%)`),
-    names_to  = "metrica",
-    values_to = "valor"
+    cols      = c(`Δ share (%)`, `Δ volume (%)`, `Δ revenue (%)`),
+    names_to  = "metric",
+    values_to = "value"
   ) %>%
-  mutate(metrica = factor(metrica,
-                          levels = c("Δ share (%)", "Δ volume (%)", "Δ receita (%)")))
+  mutate(metric = factor(metric,
+                          levels = c("Δ share (%)", "Δ volume (%)", "Δ revenue (%)")))
 
 pG <- resumo_long %>%
-  ggplot(aes(x = cenario_carbono, y = valor,
+  ggplot(aes(x = cenario_carbono, y = value,
              fill = cenario_carbono, alpha = cenario_tarifa)) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
-  facet_grid(metrica ~ exporter, scales = "free_y") +
-  scale_fill_manual(values = cores_carbono, name = "Carbono") +
-  scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tarifa") +
+  facet_grid(metric ~ exporter, scales = "free_y") +
+  scale_fill_manual(values = cores_carbono, name = "Carbon") +
+  scale_alpha_manual(values = c("MFN" = 1, "Mercosul" = 0.5), name = "Tariff") +
   scale_y_continuous(labels = function(x) paste0(x, "%")) +
   labs(
-    title    = paste("CBAM:", setor_label, "— Impactos comparativos (%)"),
-    subtitle = paste("Grupo:", nome_grupo,
-                     "| Linhas: share | volume | receita | Opaco = MFN | Transparente = Mercosul"),
-    x = "Cenário de carbono", y = "Variação (%)"
+    title    = paste("CBAM:", setor_label, "— Comparative impacts (%)"),
+    subtitle = paste("Group:", nome_grupo,
+                     "| Rows: share | volume | revenue | Opaque = MFN | Transparent = Mercosul"),
+    x = "Carbon scenario", y = "Change (%)"
   ) +
   theme_minimal(base_size = 11) +
   theme(strip.text      = element_text(face = "bold"),
@@ -679,7 +679,7 @@ ggsave(file.path(dir_output, "15h_cbam_impactos_combinados_pct.png"),
        width  = min(24, max(12, 4 * length(paises_grupo))),
        height = 8, dpi = 150)
 
-cat(sprintf("  [10b] Gráficos por métrica salvos (15b–15h) em: %s\n", dir_output))
+cat(sprintf("  [10b] Charts by metric saved (15b–15h) in: %s\n", dir_output))
 
 # ── 11. Salvar RDS ────────────────────────────────────────────────────────────
 

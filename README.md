@@ -13,7 +13,7 @@ scenario, so each simulated change is the effect of pure reallocation, with no
 technological response by exporters. The second outcome (greener technology)
 is not modelled.
 
-Language: code comments are mostly in Portuguese; the documentation is in English.
+Language: documentation, code comments, console messages and chart text are in English. File names, CSV column names and variable names keep their original Portuguese identifiers (for example `cenario_carbono`, `13_cbam_resumo_pais.csv`).
 
 ## Summary of results
 

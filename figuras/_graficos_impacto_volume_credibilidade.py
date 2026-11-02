@@ -1,13 +1,13 @@
 """
-Dois gráficos:
+Two charts:
 
 1. G_impacto_vol_credibilidade.png
    Igual ao anterior mas em mil toneladas.
-   Barra transparente = impacto bruto; barra sólida = impacto × R²_produto.
+   Transparent bar = raw impact; solid bar = impact × R²_product.
 
 2. G_oos_por_r2.png
    OOS scatter estratificado por R²_produto.
-   Painel esquerdo  = produtos com R²_p ALTO (preço domina)
+   Left panel  = products with HIGH R²_p (price dominates)
    Painel direito   = produtos com R²_p BAIXO (outros fatores dominam)
    Mostra que o modelo acerta exatamente onde deveria acertar.
 """
@@ -76,7 +76,7 @@ def compute_r2_by_product(setor):
         r2[prod] = max(r**2, 0) if math.isfinite(r) else 0.0
     return r2
 
-# ── Dados base ────────────────────────────────────────────────────────────────
+# ── Base data ────────────────────────────────────────────────────────────────
 def load_base(setor):
     path = f'{base}/{setor}_brasil_e_argentina_individual_post_tax_j3_v2/28_analise_share_vol_base.csv'
     d = {}
@@ -106,7 +106,7 @@ def load_cbam(setor):
     return imp
 
 def load_val_all(setor):
-    """Carrega todos os exportadores para o scatter OOS."""
+    """Loads all exporters for the OOS scatter."""
     path = f'{base}/{setor}_brasil_e_argentina_individual_post_tax_j3_v2/5c_validacao_delta_dados.csv'
     rows = []
     with open(path, encoding='utf-8') as f:
@@ -126,7 +126,7 @@ setores_cfg = [
 ]
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GRÁFICO 1 — Impacto por volume (mil ton)
+# CHART 1 — Impact by volume (thousand ton)
 # ══════════════════════════════════════════════════════════════════════════════
 fig1, axes1 = plt.subplots(1, 2, figsize=(15, 7))
 
@@ -166,43 +166,43 @@ for ax, (setor, nome, cor) in zip(axes1, setores_cfg):
     ax.set_yticks(list(y_pos))
     ax.set_yticklabels([r['prod'] for r in rows], fontsize=8)
     ax.axvline(0, color='#aaa', lw=0.8)
-    ax.set_xlabel('Variação no volume exportado (mil ton)', fontsize=9.5)
+    ax.set_xlabel('Change in exported volume (thousand ton)', fontsize=9.5)
 
     tot_b = sum(r['ib'] for r in rows)
     tot_a = sum(r['ia'] for r in rows)
     ax.text(0.98, 0.98,
             f'Total bruto:    {tot_b:+.1f} kt\n'
             f'Total ajustado: {tot_a:+.1f} kt\n'
-            f'R² médio: {sum(r["r2"] for r in rows)/len(rows):.2f}',
+            f'Mean R²: {sum(r["r2"] for r in rows)/len(rows):.2f}',
             transform=ax.transAxes, fontsize=8.5, ha='right', va='top',
             bbox=dict(boxstyle='round,pad=0.4', facecolor='white',
                       edgecolor='#ccc', alpha=0.92))
 
-    ax.set_title(f'{nome} — Brasil\nImpacto CBAM {CENARIO} {TARIFA}',
+    ax.set_title(f'{nome} — Brazil\nCBAM impact {CENARIO} {TARIFA}',
                  fontsize=11, fontweight='bold', color=cor)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.grid(axis='x', alpha=0.15, ls='--')
 
     p1 = mpatches.Patch(facecolor=cor, alpha=0.18, edgecolor=cor,
-                        label='Impacto bruto simulado')
+                        label='Simulated raw impact')
     p2 = mpatches.Patch(facecolor=cor, alpha=0.75,
                         label='Ajustado × R² (mecanismo confirmado)')
     ax.legend(handles=[p1, p2], fontsize=7.5, loc='lower right', framealpha=0.9)
 
 fig1.suptitle(
-    'Brasil — impacto CBAM em volume (mil ton): bruto vs. ajustado por R²_produto\n'
-    f'Cenário {CENARIO} {TARIFA}  |  R²_produto = fração da variação de share '
-    'explicada por preço (validação 2023–2025)',
+    'Brazil — impacto CBAM em volume (mil ton): bruto vs. ajustado por R²_produto\n'
+    f'Scenario {CENARIO} {TARIFA}  |  R²_product = fraction of the share change '
+    'explained by price (validation 2023–2025)',
     fontsize=10.5, y=1.01)
 plt.tight_layout(w_pad=4.0)
 plt.savefig(out + 'G_impacto_vol_credibilidade.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G_impacto_vol_credibilidade.png')
+print('Saved: G_impacto_vol_credibilidade.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# GRÁFICO 2 — OOS scatter estratificado por R²_produto
+# CHART 2 — OOS scatter stratified by R²_product
 # ══════════════════════════════════════════════════════════════════════════════
 fig2, axes2 = plt.subplots(2, 2, figsize=(12, 10))
 
@@ -210,7 +210,7 @@ for row_idx, (setor, nome, cor) in enumerate(setores_cfg):
     r2_map = compute_r2_by_product(setor)
     val    = load_val_all(setor)
 
-    # Enriquece com R²
+    # Enrich with R²
     val_r2 = [v for v in val if v['prod'] in r2_map]
     for v in val_r2:
         v['r2'] = r2_map[v['prod']]
@@ -224,7 +224,7 @@ for row_idx, (setor, nome, cor) in enumerate(setores_cfg):
     low  = [v for v in val_r2 if v['r2'] <  median_r2]
 
     for col_idx, (subset, label, r2_desc) in enumerate([
-        (high, f'R²_p alto  (≥ {median_r2:.2f})', 'preço é driver relevante'),
+        (high, f'R²_p high  (≥ {median_r2:.2f})', 'price is a relevant driver'),
         (low,  f'R²_p baixo (< {median_r2:.2f})', 'outros fatores dominam'),
     ]):
         ax = axes2[row_idx][col_idx]
@@ -244,7 +244,7 @@ for row_idx, (setor, nome, cor) in enumerate(setores_cfg):
         ax.fill_between([-lim,0], 0,-lim, alpha=0.04, color='green')
         ax.fill_between([0, lim], 0, lim, alpha=0.04, color='green')
 
-        # Scatter com tamanho proporcional a R²_p
+        # Scatter with size proportional to R²_p
         sizes = [20 + 80*r2 for r2 in r2s]
         sc = ax.scatter(pred, obs, s=sizes, c=r2s, cmap='Blues',
                         vmin=0, vmax=1, alpha=0.65,
@@ -270,10 +270,10 @@ for row_idx, (setor, nome, cor) in enumerate(setores_cfg):
         plt.colorbar(sc, ax=ax, label='R²_produto', fraction=0.03, pad=0.02)
 
 fig2.suptitle(
-    'OOS estratificado por R²_produto: o modelo acerta onde o preço é o driver\n'
-    '(validação 2023–2025, modelo 2010–2025; corte na mediana de R²_produto)',
+    'OOS stratified by R²_product: the model gets it right where price is the driver\n'
+    '(validation 2023–2025, model 2010–2025; cut at the median of R²_product)',
     fontsize=11, y=1.01)
 plt.tight_layout(h_pad=3.5, w_pad=3.0)
 plt.savefig(out + 'G_oos_por_r2.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G_oos_por_r2.png')
+print('Saved: G_oos_por_r2.png')

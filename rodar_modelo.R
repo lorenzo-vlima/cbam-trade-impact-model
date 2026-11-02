@@ -1,15 +1,15 @@
 ############################################
-# rodar_modelo.R — roda o MODELO OFICIAL (main_v2.R, com shrinkage
-# e share setorial corrigido) para um setor e grupo de países.
+# rodar_modelo.R — runs the OFFICIAL MODEL (main_v2.R, with shrinkage
+# and the corrected sector share) for a sector and a group of countries.
 #
-# Editar as 3 linhas abaixo e rodar:
+# Edit the 3 lines below and run:
 #   "C:/Program Files/R/R-4.5.3/bin/Rscript.exe" rodar_modelo.R
-# (working directory = esta pasta MODELO_OFICIAL/)
+# (working directory = this repository root)
 ############################################
 
-PRODUTO <- "cimento"                          # "ferro_aco" | "aluminio" | "cimento"
-PAISES  <- c("TR","UA","GB","BR","US","DZ","CN","EG","TN","BY","AR")
-NOME    <- "cesta_padrao"                     # nome do grupo (vira sufixo da pasta output)
+PRODUTO <- "ferro_aco"                          # "ferro_aco" | "aluminio" | "cimento"
+PAISES  <- c("BR", "AR")
+NOME    <- "brazil_and_argentina"             # group name (becomes the output folder suffix)
 
 linhas <- readLines("main_v2.R", warn = FALSE, encoding = "UTF-8")
 linhas <- sub("^produto_ativo[[:space:]]*<-.*",
@@ -22,5 +22,5 @@ linhas <- sub("^nome_grupo[[:space:]]*<-.*",
 
 tmp <- tempfile(fileext = ".R")
 writeLines(linhas, tmp, useBytes = TRUE)
-cat("== MODELO OFICIAL |", PRODUTO, "|", paste(PAISES, collapse = "+"), "==\n")
+cat("== OFFICIAL MODEL |", PRODUTO, "|", paste(PAISES, collapse = "+"), "==\n")
 source(tmp, echo = FALSE)

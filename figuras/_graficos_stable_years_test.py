@@ -1,14 +1,14 @@
 """
-Teste de mercado estável — painel completo 2010-2025.
+Stable-market test, full panel 2010-2025.
 
 Para cada produto, encontra anos onde o mercado total da UE
-pouco mudou em relação ao ano anterior. Nesses anos, toda
-redistribuição de share entre países é quase pura substituição
-via preço. Testa se beta × Δlog(price_rel) prevê o Δlog(share).
+barely changed relative to the previous year. In those years, any
+redistribution of share among countries is almost pure substitution
+through price. Tests whether beta × Δlog(price_rel) predicts Δlog(share).
 
-Reproduz a lógica do modelo:
+Reproduces the model logic:
   - price_rel = price_i / price_avg_leave_one_out  (post_tax)
-  - winsorização a 99%
+  - winsorisation at 99%
   - share = ton_i / ton_total_produto_ano
 """
 import csv, math, sys
@@ -28,9 +28,9 @@ rcParams['font.family'] = 'sans-serif'
 COR_FA = '#2c6e9e'
 COR_AL = '#c0392b'
 
-WINSOR_PCT   = 0.01   # winsorização a 99%
-STABLE_THRES = 0.05   # mercado estável: |Δ%| < 5%
-MIN_EXP      = 5      # mínimo de exportadores por produto×ano
+WINSOR_PCT   = 0.01   # winsorisation at 99%
+STABLE_THRES = 0.05   # stable market: |Δ%| < 5%
+MIN_EXP      = 5      # minimum number of exporters per product×year
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def pearson_r(x, y):
@@ -58,13 +58,13 @@ def hit_rate(obs, pred):
     if not obs: return float('nan')
     return sum(1 for o,p in zip(obs,pred) if (o>0)==(p>0))/len(obs)
 
-# ── Passo 1: carrega dados brutos e constrói price_rel e share ────────────────
+# ── Step 1: load raw data and build price_rel and share ────────────────
 def load_panel(csv_path):
     """
     Retorna dict: (prod, yr) -> list of {exporter, ton, price_rel, share}
-    Reproduz lógica do modelo: leave-one-out price_rel + winsorização.
+    Reproduces the model logic: leave-one-out price_rel + winsorisation.
     """
-    # Primeiro passo: agrega por (prod, yr)
+    # First step: aggregate by (prod, yr)
     raw = defaultdict(list)  # (prod, yr) -> [(exporter, ton, price)]
     with open(csv_path, encoding='utf-8') as f:
         for row in csv.DictReader(f, delimiter=';'):
@@ -78,8 +78,8 @@ def load_panel(csv_path):
                     raw[(prod, yr)].append({'exp': exp, 'ton': ton, 'price': price})
             except: pass
 
-    # Segundo passo: calcula share e price_rel leave-one-out
-    all_price_rel = []  # para winsorização global
+    # Second step: compute share and leave-one-out price_rel
+    all_price_rel = []  # for global winsorisation
     panel = {}
     for (prod, yr), rows in raw.items():
         total_ton   = sum(r['ton']           for r in rows)
@@ -99,7 +99,7 @@ def load_panel(csv_path):
         if entries:
             panel[(prod, yr)] = entries
 
-    # Winsorização global (99º percentil)
+    # Global winsorisation (99th percentile)
     all_price_rel.sort()
     p99 = all_price_rel[int(len(all_price_rel)*(1-WINSOR_PCT))]
     for entries in panel.values():
@@ -108,10 +108,10 @@ def load_panel(csv_path):
 
     return panel
 
-# ── Passo 2: variação anual do mercado total por produto ──────────────────────
+# ── Step 2: annual change of the total market by product ──────────────────────
 def market_changes(panel):
     """
-    Retorna (prod, yr) -> |Δ%| das importações totais da UE.
+    Returns (prod, yr) -> |Δ%| of total EU imports.
     """
     totals = defaultdict(dict)  # prod -> {yr: total_ton}
     for (prod, yr), entries in panel.items():
@@ -129,7 +129,7 @@ def market_changes(panel):
                 changes[(prod, yr_curr)] = abs((curr - prev) / prev)
     return changes
 
-# ── Passo 3: carrega betas globais por produto ────────────────────────────────
+# ── Step 3: load global betas by product ────────────────────────────────
 def load_betas(setor):
     path = f'{bdir}/{setor}_brasil_e_argentina_individual_post_tax_j3_v2/8_tabela_betas_grupos.csv'
     betas = {}
@@ -140,10 +140,10 @@ def load_betas(setor):
             except: pass
     return betas
 
-# ── Passo 4: calcula Δlog(share) e Δlog(price_rel) entre anos consecutivos ──
+# ── Step 4: compute Δlog(share) and Δlog(price_rel) between consecutive years ──
 def compute_deltas(panel, betas):
     """
-    Para cada (prod, yr) com (prod, yr-1) disponível,
+    For each (prod, yr) with (prod, yr-1) available,
     calcula Δlog para cada exportador presente nos dois anos.
     Retorna list of {prod, yr, exp, delta_obs, delta_pred, delta_price}.
     """
@@ -154,7 +154,7 @@ def compute_deltas(panel, betas):
         beta = betas.get(prod, None)
         if beta is None: continue
 
-        # mapeia ano -> {exp -> {share, price_rel}}
+        # maps year -> {exp -> {share, price_rel}}
         yr_data = {}
         for (p, yr), entries in panel.items():
             if p != prod: continue
@@ -164,7 +164,7 @@ def compute_deltas(panel, betas):
         for i in range(1, len(years)):
             yr_prev = years[i-1]
             yr_curr = years[i]
-            # exportadores com dados nos dois anos
+            # exporters with data in both years
             common = set(yr_data[yr_prev]) & set(yr_data[yr_curr])
             if len(common) < MIN_EXP: continue
 
@@ -187,7 +187,7 @@ def compute_deltas(panel, betas):
                 })
     return all_deltas
 
-# ── Passo 5: calcula métricas para um subconjunto de deltas ──────────────────
+# ── Step 5: compute metrics for a subset of deltas ──────────────────
 def compute_metrics(deltas):
     obs  = [d['delta_obs']  for d in deltas]
     pred = [d['delta_pred'] for d in deltas]
@@ -222,18 +222,18 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
     deltas  = compute_deltas(panel, betas)
 
     if not deltas:
-        print('  Sem dados suficientes.')
+        print('  Not enough data.')
         continue
 
-    # Enriquece com variação do mercado
+    # Enrich with market change
     enriched = []
     for d in deltas:
         chg = changes.get((d['prod'], d['yr']), None)
         if chg is not None:
             enriched.append({**d, 'chg': chg})
 
-    # ── Identifica anos estáveis por produto ──────────────────────────────────
-    # Produto-anos estáveis
+    # ── Identify stable years by product ──────────────────────────────────
+    # Stable product-years
     stable_keys  = {(d['prod'], d['yr']) for d in enriched
                     if d['chg'] <= STABLE_THRES}
     unstable_keys = {(d['prod'], d['yr']) for d in enriched
@@ -247,31 +247,31 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
     m_unstable = compute_metrics(unstable)
     m_all      = compute_metrics(all_enr)
 
-    # Anos estáveis encontrados
+    # Stable years found
     stable_prod_yrs = sorted(stable_keys)
     yr_counts = defaultdict(int)
     for (p, y) in stable_prod_yrs: yr_counts[y] += 1
     stable_years_summary = dict(sorted(yr_counts.items()))
 
-    print(f'\nAnos e n° de produtos com mercado estável (|Δ| < {STABLE_THRES*100:.0f}%):')
+    print(f'\nYears and number of products with a stable market (|Δ| < {STABLE_THRES*100:.0f}%):')
     for yr, cnt in stable_years_summary.items():
-        print(f'  {yr}: {cnt} produtos')
+        print(f'  {yr}: {cnt} products')
 
-    print(f'\nMétricas — todos os anos ({m_all["n"]} obs):')
+    print(f'\nMetrics: all years ({m_all["n"]} obs):')
     print(f'  r={m_all["r"]:.3f}  rho={m_all["rho"]:.3f}  hit={m_all["hit"]*100:.1f}%')
-    print(f'\nMétricas — anos ESTÁVEIS ({m_stable["n"]} obs):')
+    print(f'\nMetrics: STABLE years ({m_stable["n"]} obs):')
     print(f'  r={m_stable["r"]:.3f}  rho={m_stable["rho"]:.3f}  hit={m_stable["hit"]*100:.1f}%')
-    print(f'\nMétricas — anos INSTÁVEIS ({m_unstable["n"]} obs):')
+    print(f'\nMetrics: UNSTABLE years ({m_unstable["n"]} obs):')
     print(f'  r={m_unstable["r"]:.3f}  rho={m_unstable["rho"]:.3f}  hit={m_unstable["hit"]*100:.1f}%')
 
-    for label, m, subset in [('Estável', m_stable, stable),
-                               ('Instável', m_unstable, unstable),
+    for label, m, subset in [('Stable', m_stable, stable),
+                               ('Unstable', m_unstable, unstable),
                                ('Todos', m_all, all_enr)]:
         all_results.append({'setor': setor, 'grupo': label, **m})
 
-    # ── Scatter: estável vs todos ──────────────────────────────────────────────
+    # ── Scatter: stable vs all ──────────────────────────────────────────────
     for col_idx, (label, subset, m) in enumerate([
-        (f'Mercado estável\n(|Δ total| < {STABLE_THRES*100:.0f}%)', stable,   m_stable),
+        (f'Stable market\n(|Δ total| < {STABLE_THRES*100:.0f}%)', stable,   m_stable),
         ('Todos os anos',                                             all_enr, m_all),
     ]):
         ax = axes[row_idx][col_idx]
@@ -286,7 +286,7 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
         ax.fill_between([-lim,0],0,-lim, alpha=0.04, color='green')
         ax.fill_between([0,lim],0, lim, alpha=0.04, color='green')
 
-        # Colore por variação do mercado quando disponível
+        # Colour by market change when available
         chgs = [d.get('chg', 0) for d in subset]
         chg_max = max(chgs) if chgs else 1
         colors = [plt.cm.RdYlGn_r(c/chg_max) for c in chgs]
@@ -301,32 +301,32 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
 
         if col_idx == 0:
             yrs_shown = ', '.join(str(y) for y in sorted(stable_years_summary)[:6])
-            note = f'Anos estáveis: {yrs_shown}{"..." if len(stable_years_summary)>6 else ""}'
+            note = f'Stable years: {yrs_shown}{"..." if len(stable_years_summary)>6 else ""}'
             ax.text(0.04, 0.03, note, transform=ax.transAxes,
                     fontsize=7, color='#555', va='bottom')
 
         ax.set_title(f'{nome}\n{label}',
                      fontsize=10, fontweight='bold', color=cor)
-        ax.set_xlabel('Δ log(share) previsto  [β × Δ log(preço_rel)]', fontsize=8.5)
+        ax.set_xlabel('Predicted Δ log(share)  [β × Δ log(price_rel)]', fontsize=8.5)
         ax.set_ylabel('Δ log(share) observado', fontsize=8.5)
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.tick_params(labelsize=8)
 
 fig.suptitle(
-    f'Teste em anos de mercado estável (|Δ importações totais UE| < {STABLE_THRES*100:.0f}%)\n'
-    'Nesses anos, redistribuição de share ≈ pura substituição via preço\n'
-    'Painel completo 2011–2025  |  β da estimação v2',
+    f'Test in stable-market years (|Δ total EU imports| < {STABLE_THRES*100:.0f}%)\n'
+    'In those years, share redistribution ≈ pure substitution through price\n'
+    'Full panel 2011–2025  |  β from the v2 estimation',
     fontsize=11, y=1.01)
 
 plt.tight_layout(h_pad=3.5, w_pad=3.0)
 plt.savefig(out + 'G_stable_years_test.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('\nSalvo: G_stable_years_test.png')
+print('\nSaved: G_stable_years_test.png')
 
-# ── CSV resumo ────────────────────────────────────────────────────────────────
+# ── Summary CSV ────────────────────────────────────────────────────────────────
 import csv as csv_mod
 with open(out + 'stable_years_results.csv', 'w', newline='', encoding='utf-8') as f:
     w = csv_mod.DictWriter(f, fieldnames=['setor','grupo','n','r','rho','hit'])
     w.writeheader(); w.writerows(all_results)
-print('Salvo: stable_years_results.csv')
+print('Saved: stable_years_results.csv')

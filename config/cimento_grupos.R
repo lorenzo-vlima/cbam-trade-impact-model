@@ -1,39 +1,39 @@
 # config/cimento_grupos.R
 # ----------------------------------------
-# Mapeamento de produtos → grupos para
-# o setor de cimento (capítulo 25 HS).
+# Mapping of products → groups for
+# the cement sector (HS chapter 25).
 # ----------------------------------------
-# O cimento tem menos subdivisões que
-# alumínio e aço — o agrupamento reflete
-# o grau de processamento e tipo de produto.
+# Cement has fewer subdivisions than
+# aluminium and steel; the grouping reflects
+# the processing stage and product type.
 # ----------------------------------------
-# ATENÇÃO: confirme os códigos presentes
-# na sua base antes de rodar.
+# NOTE: confirm the codes present
+# in your dataset before running.
 # ----------------------------------------
 
 grupo_map <- tribble(
   ~product,   ~grupo,  ~grupo_label,
   
-  # Grupo 1 — Clínquer
-  # Produto intermediário, antes da moagem.
-  # Maior intensidade de carbono por tonelada.
-  "252310",   1,       "Clínquer",
+  # Group 1 — Clinker
+  # Intermediate product, before grinding.
+  # Highest carbon intensity per tonne.
+  "252310",   1,       "Clinker",
   
-  # Grupo 2 — Cimentos Portland e similares
-  # Produto final mais comum — branco e cinza.
-  "252321",   2,       "Cimento Portland e similares",
-  "252329",   2,       "Cimento Portland e similares",
+  # Group 2 — Portland and similar cements
+  # Most common final product, white and grey.
+  "252321",   2,       "Portland and similar cements",
+  "252329",   2,       "Portland and similar cements",
   
-  # Grupo 3 — Cimentos especiais e aluminosos
-  # Maior valor agregado e especificidade técnica.
-  "252330",   3,       "Cimentos especiais",
-  "252390",   3,       "Cimentos especiais",
+  # Group 3 — Special and aluminous cements
+  # Higher value added and technical specificity.
+  "252330",   3,       "Special cements",
+  "252390",   3,       "Special cements",
   
-  # Grupo 4 — Argila
-  "250700",   4,       "Argila"
+  # Group 4 — Clay
+  "250700",   4,       "Clay"
 )
 
-# IMPORTANTE: o cimento tem poucos códigos CN
-# no CBAM. Se sua base usar uma agregação
-# diferente (ex: só 2523 sem subdivisões),
-# ajuste aqui conforme necessário.
+# IMPORTANT: cement has few CN codes
+# in CBAM. If your dataset uses a different
+# aggregation (e.g. only 2523 without subdivisions),
+# adjust here as needed.

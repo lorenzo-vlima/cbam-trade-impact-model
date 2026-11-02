@@ -1,7 +1,7 @@
 """
-Gráfico de barras empilhadas: R² de variação de share (primeiras diferenças)
-para Global, Brasil e Argentina, por setor.
-Barras sempre somam 100% (contribuições incrementais).
+Stacked bar chart: R² of share changes (first differences)
+para Global, Brazil e Argentina, por setor.
+Bars always sum to 100% (incremental contributions).
 """
 import math, sys
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).re
 out  = root + '/figuras_geradas/'
 rcParams['font.family'] = 'sans-serif'
 
-# ── Dados (r2_price, r2_both) ─────────────────────────────────────────────────
+# ── Data (r2_price, r2_both) ─────────────────────────────────────────────────
 # Fonte: _r2_decomp_delta.py e _r2_decomp_delta_brar.py
 data = {
     'Iron &\nSteel': {
@@ -63,11 +63,11 @@ for s_idx, setor in enumerate(setores):
         bar_r = ax.bar(x, rs,  bottom=p+add, width=width,
                        color=COL_RESID,  alpha=0.90, edgecolor='white', linewidth=0.4)
 
-        # Borda colorida por país
+        # Border coloured by country
         ax.bar(x, 100, width=width, bottom=0,
                color='none', edgecolor=COR_PAIS[pais], linewidth=1.5, zorder=4)
 
-        # Preço
+        # Price
         if p > 4:
             ax.text(x, p/2, f'{p:.1f}%', ha='center', va='center',
                     fontsize=7.5, color='white', fontweight='bold')
@@ -76,22 +76,22 @@ for s_idx, setor in enumerate(setores):
             ax.text(x, -9, f'{p:.1f}%', ha='center', va='top',
                     fontsize=7, color='#2980b9', fontweight='bold')
 
-        # Tendência de demanda
+        # Demand trend
         if add > 2.5:
             ax.text(x, p + add/2, f'+{add:.1f}%', ha='center', va='center',
                     fontsize=7, color='black')
 
-        # Resíduo
+        # Residual
         rs_mid = p + add + rs/2
         ax.text(x, rs_mid, f'{rs:.1f}%', ha='center', va='center',
                 fontsize=7, color='black')
 
-        # Label do país abaixo
+        # Country label below
         ax.text(x, -18, pais, ha='center', va='top', fontsize=8,
                 color=COR_PAIS[pais], fontweight='bold',
                 rotation=0)
 
-    # Label do setor no centro do grupo — one-line, clear of the legend
+    # Sector label at the centre of the group, one line, clear of the legend
     x_mid = x_center + (n_pais - 1) / 2 * (width + gap)
     ax.text(x_mid, 104, setor.replace('\n', ' '), ha='center', va='bottom',
             fontsize=11.5, fontweight='bold', color='#333')
