@@ -1,117 +1,147 @@
 # CBAM-Trade-Impact-Model
 
-**Undergraduate Thesis Research Project (TCC)**
+**CBAM and Export Competitiveness: Market Share Elasticity Estimates and Simulations for Brazil and Argentina**
 
-Replication files for a thesis on how the EU's Carbon Border Adjustment
-Mechanism (CBAM) reallocates import market share in **iron & steel, aluminium
-and cement**, with a focus on Brazil and Argentina. The model is a PPML
-market-share gravity model with sign-constrained shrinkage (v2).
+Lorenzo Viana Lima and Flávio Tosi Feijó. The paper is in `paper/`.
 
-The thesis asks about the first of the two outcomes the EU expects from CBAM,
-a change in the supplier basket. Emission factors are held fixed in every
-scenario, so each simulated change is the effect of pure reallocation, with no
-technological response by exporters. The second outcome (greener technology)
-is not modelled.
+Replication files for a paper on how the EU's Carbon Border Adjustment
+Mechanism (CBAM) affects the competitiveness of Brazilian and Argentine
+exports in **iron & steel, aluminium and cement**. A structural gravity model
+estimated by PPML with fixed effects gives market-share price elasticities at
+the individual product level (trade flows from more than 150 countries to the
+EU, 2010 to 2025). These elasticities feed CBAM cost simulations under three
+carbon prices and two tariff regimes (MFN and Mercosul).
 
-Language: documentation, code comments, console messages and chart text are in English. File names, CSV column names and variable names keep their original Portuguese identifiers (for example `cenario_carbono`, `13_cbam_resumo_pais.csv`).
+## Main findings
 
-## Summary of results
+- Impacts are negative but moderate, and highly heterogeneous across products.
+- In iron & steel, Brazil's exposure is concentrated in higher value-added
+  products. For Argentina, lower substitution elasticities soften the impact.
+- In aluminium, eliminating the tariff under the Mercosul-EU agreement offsets
+  the CBAM cost at the lower carbon prices.
+- Product-level disaggregation is decisive: sector-level analyses hide the
+  heterogeneity that determines the competitive impact on each country.
 
-Reference scenario: EUR 95/tCO2, MFN tariff, iron & steel.
+![Iron & steel impact](images/G_sim_FA_resumo_v3.png)
 
-| Group | Base share of EU imports | Simulated share |
-|---|---|---|
-| EU / EEA / Switzerland (exempt) | 63.3% | 68.2% |
-| 11-country basket (taxed exporters) | 28.5% | 23.0% |
-| Others (long tail) | 8.2% | 8.9% |
+![Aluminium impact](images/G_sim_AL_resumo_v2.png)
 
-Brazil loses about 2.7% of its iron & steel volume, against roughly 30% to 50%
-for Russia, India, Turkey and China. Cement has a very weak price mechanism,
-so its results are the least reliable. The exempt bloc's "gain" is a
-consequence of share renormalisation, not an estimated supply response.
+![Impact by product, Brazil](images/G_bubble_br.png)
 
-## Root files
+## Method
 
-- `main_v2.R`: the official model. Configuration (product, countries, scenarios) is at the top.
-- `rodar_modelo.R`: runner. Set `PRODUTO`, `PAISES` and `NOME`, then run it.
-- `analise_realocacao_verde.R`: isolates pure reallocation (fixed technology): aggregate change in embedded emissions, average carbon intensity of the basket before/after, and whether dirtier exporters lose more share.
-- `analise_realocacao_cesta.csv`, `analise_realocacao_paises.csv`: outputs of the script above.
-- `extrair_dashboard.R`: consolidates the model outputs of the three sectors into a single JSON file.
-- `LICENSE`: MIT.
+- **Estimator:** PPML (`fixest::fepois`) on market share, with
+  `exporter x product` and `product x year` fixed effects.
+- **Price variable:** post-tariff unit price relative to the leave-one-out
+  average price of competitors.
+- **Country elasticities:** shrunk towards the sector-wide elasticity. The v2
+  model adds a sign constraint: a country estimate with the wrong (positive)
+  sign is censored at zero before shrinkage.
+- **Simulation:** CBAM cost = product-level emission factor x carbon price is
+  added to the price of each non-exempt exporter. Shares of all exporters are
+  renormalised to sum to one. EU/EEA/Switzerland are exempt.
+- **Scenarios:** carbon price of EUR 75, 95 and 115 per tCO2, under MFN and
+  Mercosul tariffs (6 per sector).
+- **Validation:** out-of-sample test (train to 2022, test 2025), explained
+  variation split between fixed effects and price, and a historical test with
+  the 2016 EU anti-dumping duties on cold-rolled steel.
 
-## scripts folder
+## Repository layout
 
-R pipeline sourced in order by `main_v2.R`:
+```
+paper/          the paper (PDF)
+main_v2.R       official model; configuration at the top
+rodar_modelo.R  runner: set PRODUTO / PAISES / NOME and run
+scripts/        pipeline 00 to 09 (+ 04b), sourced in order by main_v2.R
+helpers/        shrinkage with sign constraint, goodness of fit, beta audit
+config/         trade data, emission factors, product-to-group mappings
+figuras/        Python scripts for the paper figures
+analysis/       extra analysis: pure reallocation vs. green technology
+images/         figures shown in this README
+outputs/        model results per run (generated, git-ignored)
+```
+
+### scripts and helpers
 
 - `00_tracking.R`: sample tracking after each filter.
 - `01_limpeza.R`: cleaning, prices, leave-one-out relative price, market share.
-- `02_modelo.R`: PPML estimation with `exporter x product` and `product x year` fixed effects.
-- `03_paises.R`: country-specific elasticities with shrinkage toward the sector elasticity.
-- `04_validacao.R`, `04b_validacao_delta.R`: out-of-sample validation (train to 2022, test 2025), levels and changes.
+- `02_modelo.R`: PPML estimation.
+- `03_paises.R`: country-specific elasticities with shrinkage.
+- `04_validacao.R`, `04b_validacao_delta.R`: out-of-sample validation (levels and changes).
 - `05_grupos.R`: elasticities by processing stage (uses `config/*_grupos.R`).
 - `06_robustez_paises.R`: robustness against a basket-restricted model.
-- `07_simulacao_cbam.R`: 6 scenarios (3 carbon prices x MFN/Mercosul), with competitive renormalisation of shares.
+- `07_simulacao_cbam.R`: 6 scenarios with competitive renormalisation of shares.
 - `08_projecao_cbam.R`: cumulative projection 2026 to 2028.
-- `09_analise.R`: impact tables, charts, emissions and goodness of fit.
-- `helper_grupos.R`: grouping helper.
+- `09_analise.R`: impact tables, charts, emissions, goodness of fit.
+- `helpers/funcoes_modelo_v2.R`: shrinkage with the sign constraint.
 
-## helpers folder
+### config
 
-- `funcoes_modelo_v2.R`: country-elasticity shrinkage with the sign constraint (official). `funcoes_modelo.R` is the unconstrained v1.
-- `10_auditoria_betas.R`: audit of the estimated elasticities.
-- `11_gof_modelo.R`: explained variation, fixed effects vs. price.
+- `Base_de_dados_final_{Ferro,Aluminio,Cimento}.csv`: bilateral trade data (volume, value, price, tariff) by exporter and HS product.
+- `Base_fatores_*_ajustada.csv`: emission factors by exporter and product, with the CBAM phase-in factors for 2026 to 2028. Non-EU exporters plus a rest-of-world fallback.
+- `*_grupos.R`: product-to-group mappings.
 
-## config folder
+### figuras (paper figures)
 
-- `Base_de_dados_final_Ferro.csv`, `..._Aluminio.csv`, `..._Cimento.csv`: bilateral trade data (volume, value, price, tariff) by exporter and HS product, 2008 to 2025.
-- `Base_fatores_ferro_ajustada.csv`, `..._aluminio_...`, `..._cimento_...`: emission factors by exporter and product, with the CBAM phase-in factors for 2026 to 2028. Only non-EU exporters are covered, plus a rest-of-world fallback.
-- `ferro_aco_grupos.R`, `aluminio_grupos.R`, `cimento_grupos.R`: product-to-group mappings.
+| Figure | Script |
+|---|---|
+| 1. R² decomposition (share changes) | `_r2_decomp_delta.py` |
+| 2 and 3. Elasticities, Brazil and Argentina | `_graficos_secao1_paises_v2.py` |
+| 4. Impact scenarios, iron & steel | `_graf_sim_FA_resumo_v3.py` |
+| 5 and 10. Impact by product, Brazil and Argentina | `_graf_bubble_separado.py` |
+| 6. Impact scenarios, aluminium | `_graf_sim_AL_resumo_v2.py` |
+| 8 and 9. Historical validation (anti-dumping 2016) | `_teste_antidumping_2016.py`, `_teste_antidumping_2016_opA.py` |
+| 11. Tariffs vs. CBAM cost, aluminium | `_graf_AL_tarifa_vs_cbam.py` |
+| Table 4. Explanatory power | `_graficos_secao1.py` |
 
-## figuras folder
+The histogram of relative prices (Figure 7) and the panel-diagnostic and
+robustness tables (Tables 2, 3, 5 and 6) are not generated by scripts in this
+repository.
 
-38 Python scripts that build the thesis figures. They read from `outputs/` and
-write to `figuras_geradas/`. They locate the repository from their own path,
-so run them from the repository root, for example:
+### analysis
 
-```bash
-python figuras/_graf_sim_FA_resumo_v3.py
-```
-
-Main figures:
-
-- Elasticities by country and group: `_graficos_elasticidades_combinado_v2.py`
-- Out-of-sample validation: `_graficos_validacao_2025.py`, `_graficos_validacao_2019test.py`
-- Explained variation, levels vs. changes: `_graf_r2_mesclado.py`, `_r2_decomp_delta.py`
-- Iron & steel impact summary: `_graf_sim_FA_resumo_v3.py`
-- Aluminium impact summary and decomposition: `_graf_sim_AL_resumo_v2.py`, `_graf_sim_AL_decomp.py`, `_graf_sim_AL_mercosul.py`
-- Brazil and Argentina bubble charts: `_graf_bubble_brar.py`, `_graf_bubble_AL.py`
-- Stability and placebo tests: `_graficos_rolling_betas.py`, `_graficos_stable_years_test.py`, `_graficos_stable_market_test.py`
-- Anti-dumping 2016 validation: `_teste_antidumping_2016.py`
-
-## Folders not tracked here
-
-`outputs/` (model results per run, about 60 MB) and `figuras_geradas/`
-(generated figures and tables, about 18 MB) are regenerated by running the
-code and are git-ignored.
+`analysis/analise_realocacao_verde.R` holds emission factors fixed across
+scenarios, so every change in volume or embedded emissions is pure
+reallocation of the supplier basket, with no technological response by
+exporters. It reports the aggregate change in embedded emissions, the average
+carbon intensity of the basket before and after, and whether dirtier exporters
+lose more share. This analysis is not part of the paper; its outputs are the
+two CSV files in the same folder. It reads model runs named `cesta_padrao`
+(set `NOME` in `rodar_modelo.R`). Caveat: the emission-factor file has no EU
+producers, so the effect on global emissions cannot be assessed.
 
 ## How to replicate
 
-1. Install R 4.5 with `tidyverse`, `fixest`, `broom`, `ggplot2`, `janitor`
-   (and `jsonlite` for the JSON export). Python 3 with `matplotlib` for
-   the figures.
+1. Install R 4.5 with `tidyverse`, `fixest`, `broom`, `ggplot2` and `janitor`,
+   and Python 3 with `matplotlib` for the figures.
 2. Edit the three lines at the top of `rodar_modelo.R`:
 
    ```r
-   PRODUTO <- "aluminio"          # "ferro_aco" | "aluminio" | "cimento"
-   PAISES  <- c("BR", "AR", "CN") # focal countries (ISO-2)
-   NOME    <- "my_run"            # suffix of the output folder
+   PRODUTO <- "ferro_aco"          # "ferro_aco" | "aluminio" | "cimento"
+   PAISES  <- c("BR", "AR")        # focal countries (ISO-2)
+   NOME    <- "brazil_and_argentina"
    ```
 
 3. From the repository root run `Rscript rodar_modelo.R`. Results go to
-   `outputs/<product>_<name>_individual_post_tax_j3_v2/`. A run with an
-   11-country basket takes about 10 to 15 minutes.
+   `outputs/<product>_<name>_individual_post_tax_j3_v2/`.
+4. Build a figure with, for example, `python figuras/_graf_sim_FA_resumo_v3.py`.
+   The scripts read from `outputs/` and write to `figuras_geradas/`; run them
+   from the repository root, after the model runs they depend on.
+
+`outputs/` and `figuras_geradas/` are regenerated by the code and are
+git-ignored.
+
+Language: documentation, code comments, console messages and chart text are in
+English. File names, CSV column names and variable names keep their original
+Portuguese identifiers (for example `cenario_carbono`,
+`13_cbam_resumo_pais.csv`).
 
 ## Data
 
-Trade data and emission factors in `config/` are the inputs used for the
-thesis. Check the terms of the original sources before reusing them.
+Trade data and emission factors in `config/` are the inputs used in the paper.
+Check the terms of the original sources before reusing them.
+
+## License
+
+Code is released under the MIT License (see `LICENSE`). The paper in `paper/`
+is not covered by that license.
