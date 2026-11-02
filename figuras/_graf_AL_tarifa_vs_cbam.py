@@ -10,6 +10,7 @@ from matplotlib import rcParams
 sys.stdout.reconfigure(encoding='utf-8')
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
 out  = root + '/figuras_geradas/'
+os.makedirs(out, exist_ok=True)
 rcParams['font.family'] = 'sans-serif'
 
 # from analysis

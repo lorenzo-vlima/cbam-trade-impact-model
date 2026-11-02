@@ -9,7 +9,12 @@
 
 PRODUTO <- "ferro_aco"                          # "ferro_aco" | "aluminio" | "cimento"
 PAISES  <- c("BR", "AR")
-NOME    <- "brazil_and_argentina"             # group name (becomes the output folder suffix)
+NOME    <- "brasil_e_argentina"               # group name (output folder name; the figure scripts expect this one)
+
+# Optional: historical test (anti-dumping 2016) runs on data up to 2015.
+# Use ANO_CORTE <- 2015 and SUFIXO <- "roll2015"; leave NULL for the main runs.
+ANO_CORTE <- NULL
+SUFIXO    <- NULL
 
 linhas <- readLines("main_v2.R", warn = FALSE, encoding = "UTF-8")
 linhas <- sub("^produto_ativo[[:space:]]*<-.*",
@@ -19,6 +24,15 @@ linhas <- sub("^paises_grupo[[:space:]]*<-.*",
               linhas)
 linhas <- sub("^nome_grupo[[:space:]]*<-.*",
               paste0('nome_grupo <- "', NOME, '"'), linhas)
+
+if (!is.null(ANO_CORTE)) {
+  linhas <- sub("^ano_corte[[:space:]]*<-.*", paste0("ano_corte <- ", ANO_CORTE), linhas)
+  linhas <- sub("^ano_val_treino[[:space:]]*<-.*", paste0("ano_val_treino <- ", ANO_CORTE - 2), linhas)
+  linhas <- sub("^ano_val_teste[[:space:]]*<-.*", paste0("ano_val_teste <- ", ANO_CORTE), linhas)
+}
+if (!is.null(SUFIXO)) {
+  linhas <- sub("^sufixo_output[[:space:]]*<-.*", paste0('sufixo_output <- "', SUFIXO, '"'), linhas)
+}
 
 tmp <- tempfile(fileext = ".R")
 writeLines(linhas, tmp, useBytes = TRUE)
