@@ -67,7 +67,7 @@ print(
   digits = 3
 )
 
-write.csv(resumo_cesta, "analise_realocacao_cesta.csv", row.names = FALSE)
+write.csv(resumo_cesta, "analysis/analise_realocacao_cesta.csv", row.names = FALSE)
 
 # ---------------------------------------------------------------
 # 3. Does the basket get "greener"? Do dirtier countries lose more share?
@@ -101,7 +101,7 @@ cat("3. DATA BY COUNTRY (scenario 95/tCO2, MFN) -- emission factor x share\n")
 cat("============================================================\n")
 print(as.data.frame(dados_pais), digits = 3)
 
-write.csv(dados_pais, "analise_realocacao_paises.csv", row.names = FALSE)
+write.csv(dados_pais, "analysis/analise_realocacao_paises.csv", row.names = FALSE)
 
 cat("\n---- Simple correlation: delta_share_pp x fator_emissao_pond ----\n")
 for (s in unique(dados_pais$setor)) {
@@ -125,4 +125,4 @@ cat("\n---- Pooled regression (relative change %) ~ fator_emissao + beta + secto
 m2 <- lm(variacao_relativa_pct ~ fator_z + beta_z + setor, data = dados_pais_z)
 print(summary(m2))
 
-cat("\nSaved: analise_realocacao_cesta.csv, analise_realocacao_paises.csv\n")
+cat("\nSaved: analysis/analise_realocacao_cesta.csv, analysis/analise_realocacao_paises.csv\n")
