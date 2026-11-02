@@ -194,4 +194,4 @@ fig.suptitle(
 plt.tight_layout(h_pad=3.5, w_pad=3.0)
 plt.savefig(out + 'G_rolling_betas.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G_rolling_betas.png')
+print('Saved: G_rolling_betas.png')

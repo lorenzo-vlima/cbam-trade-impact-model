@@ -1,24 +1,24 @@
 ############################################
 # 01_limpeza.R — PPML share
 # ----------------------------------------
-# Carrega, limpa e constrói variáveis.
+# Loads, cleans and builds variables.
 # DV principal: share (market share)
 #
 # Depende de: main.R
 # Produz: df (share, log_price_rel, dummies)
 ############################################
 
-cat("[ 01 ] Limpeza e construção de variáveis...\n")
+cat("[ 01 ] Cleaning and variable construction...\n")
 
 arquivo_price <- switch(produto_ativo,
   "aluminio"  = file.path(dir_config, "Base_de_dados_final_Aluminio.csv"),
   "ferro_aco" = file.path(dir_config, "Base_de_dados_final_Ferro.csv"),
   "cimento"   = file.path(dir_config, "Base_de_dados_final_Cimento.csv"),
-  stop("produto_ativo inválido: ", produto_ativo)
+  stop("invalid produto_ativo: ", produto_ativo)
 )
 
 df_raw <- read.csv(file = arquivo_price, header = TRUE, sep = ";")
-registrar(df_raw, "01", "01. raw", nota = "antes de qualquer filtro")
+registrar(df_raw, "01", "01. raw", note = "before any filter")
 
 df <- df_raw %>%
   mutate(
@@ -31,13 +31,13 @@ df <- df_raw %>%
   ) %>%
   filter(year >= ano_inicio, year <= ano_corte)
 
-registrar(df, "01", "02. filtro período", nota = paste(ano_inicio, "a", ano_corte))
+registrar(df, "01", "02. period filter", note = paste(ano_inicio, "to", ano_corte))
 
 df <- df %>%
   filter(!is.na(ton), !is.na(euro), !is.na(tariff), ton >= 1, euro >= 0) %>%
   filter(ton > filtro_vol, euro > filtro_euros)
 
-registrar(df, "01", "03. removidos NAs/negativos e filtros mínimos")
+registrar(df, "01", "03. removed NAs/negatives and minimum filters")
 
 # Singletons
 n_antes <- nrow(df)
@@ -45,12 +45,12 @@ df <- df %>%
   group_by(exporter, product) %>%
   filter(n_distinct(year) >= min_anos_obs) %>%
   ungroup()
-cat("  Singletons removidos:", n_antes - nrow(df), "obs |",
+cat("  Singletons removed:", n_antes - nrow(df), "obs |",
     n_distinct(df$exporter), "exportadores\n")
 
-registrar(df, "01", "04. remoção de singletons")
+registrar(df, "01", "04. singleton removal")
 
-# Filtro share mínimo
+# Minimum share filter
 if (!is.null(share_min_pais)) {
   ton_total_prov <- df %>%
     group_by(product, year) %>%
@@ -67,7 +67,7 @@ if (!is.null(share_min_pais)) {
       n_antes - n_distinct(df$exporter), "exportadores removidos\n")
 }
 
-# Preço unitário e ajuste tarifário
+# Unit price and tariff adjustment
 df <- df %>%
   mutate(price = if_else(ton > 0, euro / ton, NA_real_))
 
@@ -79,7 +79,7 @@ df <- df %>%
   mutate(euro_loo = if_else(price_model == "post_tax" & !is.na(price),
                              price * ton, euro))
 
-# Preço médio leave-one-out
+# Leave-one-out average price
 df <- df %>%
   group_by(product, year) %>%
   mutate(
@@ -92,7 +92,7 @@ df <- df %>%
   ) %>%
   ungroup()
 
-# Market share e preço relativo
+# Market share and relative price
 df <- df %>%
   mutate(
     share     = if_else(total_ton_all > 0, ton / total_ton_all, NA_real_),
@@ -100,27 +100,27 @@ df <- df %>%
                         price / price_avg_loo, NA_real_)
   )
 
-# Winsorização
+# Winsorisation
 if (!is.null(winsor_price_rel)) {
   p_high <- quantile(df$price_rel, 1 - winsor_price_rel, na.rm = TRUE)
-  cat("  Winsorização price_rel (", winsor_price_rel * 100, "%) — p_high:", round(p_high, 4), "\n")
+  cat("  Winsorisation price_rel (", winsor_price_rel * 100, "%) — p_high:", round(p_high, 4), "\n")
   df <- df %>%
     mutate(price_rel_orig = price_rel,
            price_rel      = pmin(price_rel, p_high))
-  cat("  Obs ajustadas:", sum(df$price_rel_orig > p_high, na.rm = TRUE), "\n")
+  cat("  Adjusted obs:", sum(df$price_rel_orig > p_high, na.rm = TRUE), "\n")
 }
 
 df <- df %>% mutate(log_price_rel = log(price_rel))
 
-registrar(df, "01", "05. dataset final c/ price_rel")
+registrar(df, "01", "05. final dataset with price_rel")
 
-# Dummies para cada país do grupo
+# Dummies for each country in the group
 for (cod in paises_grupo) {
   df[[paste0("d_", cod)]] <- if_else(df$exporter == cod, 1L, 0L)
 }
 
-cat("  Obs totais:          ", nrow(df), "\n")
-cat("  Obs com NA price_rel:", sum(is.na(df$price_rel)), "\n")
+cat("  Total obs:           ", nrow(df), "\n")
+cat("  Obs with NA price_rel:", sum(is.na(df$price_rel)), "\n")
 for (cod in paises_grupo) {
   cat("  Obs", cod, ":", sum(df$exporter == cod), "\n")
 }

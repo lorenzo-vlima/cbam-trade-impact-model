@@ -1,7 +1,7 @@
 """
-v2 — desenhado para aparecer legível em Word (portrait A4 ~17cm largura).
-Princípio: figura pequena (10 pol.) + fontes grandes = texto legível após escalar.
-Cor = setor; forma = país (círculo = Brasil, triângulo = Argentina).
+v2: designed to be legible in Word (portrait A4, ~17 cm wide).
+Principle: small figure (10 in.) + large fonts = legible text after scaling.
+Colour = sector; shape = country (circle = Brazil, triangle = Argentina).
 """
 import sys
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ grupos_CE = [
     ('Clay',              -1.611, -0.188, -1.485, 100.0, 100.0),
 ]
 
-# Cor = setor (mesma para Brasil e Argentina)
+# Colour = sector (same for Brazil and Argentina)
 COR_FA = '#2c6e9e'
 COR_AL = '#c0392b'
 COR_CE = '#27ae60'
@@ -109,7 +109,7 @@ def plot_painel_single(ax, grupos, cor_pais, setor_key, titulo,
                     color='#666666', ha='center', va='top',
                     zorder=7, clip_on=False, bbox=LBBOX)
 
-    # β setorial do país
+    # country sector β
     b_set = beta_setor[setor_key][pais_label]
     ax.axvline(b_set, color=cor_pais, linewidth=1.4, linestyle=':',
                alpha=0.6, zorder=0)
@@ -172,11 +172,11 @@ fig.suptitle('Estimated market share price elasticities by product group — Bra
 plt.tight_layout(w_pad=2.5, rect=[0, 0.13, 1, 1])
 plt.savefig(out + 'G1_elasticidades_brasil_v2.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_brasil_v2.png')
+print('Saved: G1_elasticidades_brasil_v2.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURA — Argentina v2  (mesmas cores de setor que Brasil, forma = triângulo)
+# FIGURE — Argentina v2  (same sector colours as Brazil, shape = triangle)
 # ══════════════════════════════════════════════════════════════════════════════
 fig, axes = plt.subplots(1, 3, figsize=(10, 5.5),
                          gridspec_kw={'width_ratios': [1, 1, 1]})
@@ -208,4 +208,4 @@ fig.suptitle('Estimated market share price elasticities by product group — Arg
 plt.tight_layout(w_pad=2.5, rect=[0, 0.13, 1, 1])
 plt.savefig(out + 'G1_elasticidades_argentina_v2.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_argentina_v2.png')
+print('Saved: G1_elasticidades_argentina_v2.png')

@@ -1,20 +1,20 @@
 """
-Teste de validação histórica — Antidumping EU 2016 em aço cold-rolled (CRC).
+Historical validation test: EU 2016 anti-dumping duties on cold-rolled steel (CRC).
 
-Regulamento (EU) 2016/1329 impôs tarifas definitivas em julho de 2016:
-  - China: 22.1% (taxa residual "all others")
-  - Rússia: 36.1% (taxa residual "all others")
-  - Brasil, Coreia, Índia etc.: não afetados → candidatos a ganhadores
+Regulation (EU) 2016/1329 imposed definitive duties in July 2016:
+  - China: 22.1% (residual "all others" rate)
+  - Russia: 36.1% (residual "all others" rate)
+  - Brazil, Korea, India etc.: not affected, candidates to be winners
 
-Produtos afetados (HS4 presentes na base):
+Affected products (HS4 present in the dataset):
   7209, 7211, 7225, 7226
 
-Lógica do teste:
-  1. Estima modelo PRÉ-CHOQUE em 2010-2015  →  betas do roll2015
-  2. Constrói choque de preço relativo pelo antidumping (mesma fórmula do CBAM)
-  3. Simula redistribuição de share a partir de 2015 (base pré-choque)
-  4. Compara com share observado em 2017 (primeiro ano com efeito pleno)
-  5. Métricas: direção correta, Spearman, regressão magnitude
+Test logic:
+  1. Estimates a PRE-SHOCK model on 2010-2015  →  roll2015 betas
+  2. Builds the relative price shock from the anti-dumping duty (same formula as CBAM)
+  3. Simulates share redistribution from 2015 (pre-shock base)
+  4. Compares with the share observed in 2017 (first year with the full effect)
+  5. Metrics: correct direction, Spearman, magnitude regression
 """
 
 import csv, math, sys
@@ -32,17 +32,17 @@ bdir = root + '/outputs'
 
 rcParams['font.family'] = 'sans-serif'
 
-# ── Definição do choque antidumping ───────────────────────────────────────────
+# ── Definition of the anti-dumping shock ───────────────────────────────────────────
 # Regulamento (EU) 2016/1329 — CRC definitivo julho 2016
 ANTI_TARIFFS = {
     'CN': 0.221,   # China — taxa "all others"
-    'RU': 0.361,   # Rússia — taxa "all others"
+    'RU': 0.361,   # Russia, "all others" rate
 }
 CRC_PRODUCTS = {'7209', '7211', '7225', '7226'}
-ANO_BASE     = 2015   # share e preço pré-choque
-ANO_TESTE    = 2017   # primeiro ano com efeito pleno
+ANO_BASE     = 2015   # pre-shock share and price
+ANO_TESTE    = 2017   # first year with the full effect
 WINSOR_PCT   = 0.01
-MIN_EXP      = 5      # mínimo de exportadores por produto
+MIN_EXP      = 5      # minimum number of exporters per product
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def pearson_r(x, y):
@@ -66,9 +66,9 @@ def spearman_r(x, y):
     d2 = sum((a-b)**2 for a,b in zip(rx,ry))
     return 1 - 6*d2/(n*(n**2-1))
 
-# ── Carrega dados brutos ──────────────────────────────────────────────────────
+# ── Load raw data ──────────────────────────────────────────────────────
 def load_raw(csv_path, produtos, anos):
-    """Retorna (prod, yr, exp) -> {ton, price}"""
+    """Returns (prod, yr, exp) -> {ton, price}"""
     data = {}
     with open(csv_path, encoding='utf-8') as f:
         for row in csv.DictReader(f, delimiter=';'):
@@ -85,13 +85,13 @@ def load_raw(csv_path, produtos, anos):
             data[(prod, yr, exp)] = {'ton': ton, 'price': price}
     return data
 
-# ── Computa share e price_rel leave-one-out (mesma lógica do modelo) ──────────
+# ── Compute share and leave-one-out price_rel (same logic as the model) ──────────
 def compute_panel(data, winsor_p99=None):
     """
-    Para cada (prod, yr), calcula share e price_rel LOO.
+    For each (prod, yr), computes share and LOO price_rel.
     Retorna (prod, yr) -> {exp -> {share, price_rel}}
     """
-    # Agrega totais por produto-ano
+    # Aggregate totals by product-year
     totals = defaultdict(lambda: {'ton': 0.0, 'euro': 0.0})
     for (prod, yr, exp), d in data.items():
         totals[(prod, yr)]['ton']  += d['ton']
@@ -112,7 +112,7 @@ def compute_panel(data, winsor_p99=None):
                                    'price': d['price'], 'ton': d['ton']}
         all_pr.append(price_rel)
 
-    # Winsorização
+    # Winsorisation
     if all_pr:
         all_pr.sort()
         p99 = all_pr[int(len(all_pr)*(1-WINSOR_PCT))]
@@ -122,7 +122,7 @@ def compute_panel(data, winsor_p99=None):
 
     return panel
 
-# ── Carrega betas pré-choque (roll2015) ───────────────────────────────────────
+# ── Load pre-shock betas (roll2015) ───────────────────────────────────────
 def load_betas_pre(setor):
     path = (f'{bdir}/{setor}_brasil_e_argentina_individual_post_tax_j3_roll2015'
             f'/4_betas_simulacao_cbam.csv')
@@ -135,24 +135,24 @@ def load_betas_pre(setor):
             except: pass
     return betas
 
-# ── Constrói choque de preço antidumping ──────────────────────────────────────
+# ── Build the anti-dumping price shock ──────────────────────────────────────
 def compute_ad_price_shock(panel_base, tariffs, prod):
     """
-    Para cada exportador, recalcula o preço pós-tarifa e o novo price_rel.
+    For each exporter, recomputes the post-duty price and the new price_rel.
     Retorna {exp -> delta_log_price_rel}
     """
     yr_dict = panel_base.get((prod, ANO_BASE), None)
     if yr_dict is None: return {}
 
-    # Preços originais por exportador
+    # Original prices by exporter
     exporters = list(yr_dict.keys())
     prices = {e: yr_dict[e]['price'] for e in exporters}
     tons   = {e: yr_dict[e]['ton']   for e in exporters}
 
-    # Preços pós-tarifa
+    # Post-duty prices
     prices_ad = {e: prices[e] * (1 + tariffs.get(e, 0.0)) for e in exporters}
 
-    # Nova média leave-one-out pós-tarifa
+    # New post-duty leave-one-out mean
     total_ton  = sum(tons.values())
     total_euro_ad = sum(prices_ad[e] * tons[e] for e in exporters)
 
@@ -163,9 +163,9 @@ def compute_ad_price_shock(panel_base, tariffs, prod):
         if ton_loo <= 0: continue
         price_avg_loo_ad = euro_loo / ton_loo
 
-        # price_rel original (já calculado no panel)
+        # original price_rel (already computed in the panel)
         pr_orig = yr_dict[e]['price_rel']
-        # price_rel pós-tarifa
+        # post-duty price_rel
         pr_ad   = prices_ad[e] / price_avg_loo_ad
 
         if pr_orig <= 0 or pr_ad <= 0: continue
@@ -173,10 +173,10 @@ def compute_ad_price_shock(panel_base, tariffs, prod):
 
     return shocks
 
-# ── Simulação de redistribuição ───────────────────────────────────────────────
+# ── Redistribution simulation ───────────────────────────────────────────────
 def simulate(panel_base, panel_obs, betas, tariffs):
     """
-    Para cada produto CRC, simula share pós-choque e compara com observado 2017.
+    For each CRC product, simulates the post-shock share and compares it with the observed 2017 share.
     """
     results = []
 
@@ -188,14 +188,14 @@ def simulate(panel_base, panel_obs, betas, tariffs):
         obs_yr  = panel_obs.get( (prod, ANO_TESTE), {})
         if not base_yr or not obs_yr: continue
 
-        # Exportadores com dados nos dois anos
+        # Exporters with data in both years
         common = set(base_yr) & set(obs_yr)
         if len(common) < MIN_EXP: continue
 
-        # Choque de preço
+        # Price shock
         shocks = compute_ad_price_shock(panel_base, tariffs, prod)
 
-        # Simulação
+        # Simulation
         sim_shares = {}
         for e in common:
             s_base = base_yr[e]['share']
@@ -208,7 +208,7 @@ def simulate(panel_base, panel_obs, betas, tariffs):
         for e in sim_shares:
             sim_shares[e] /= total_sim
 
-        # Compara com observado
+        # Compare with observed
         total_obs = sum(obs_yr[e]['share'] for e in common)
         if total_obs <= 0: continue
         obs_shares_norm = {e: obs_yr[e]['share'] / total_obs for e in common}
@@ -260,10 +260,10 @@ for prod in CRC_PRODUCTS:
 results = simulate(panel_base, panel_obs, betas, ANTI_TARIFFS)
 
 if not results:
-    print('Sem resultados. Verifique os dados.')
+    print('No results. Check the data.')
     sys.exit(1)
 
-# ── Métricas globais ──────────────────────────────────────────────────────────
+# ── Global metrics ──────────────────────────────────────────────────────────
 d_sim_all = [r['d_sim'] for r in results]
 d_obs_all = [r['d_obs'] for r in results]
 correct   = [r['correct_dir'] for r in results]
@@ -272,7 +272,7 @@ hit       = sum(correct) / len(correct) * 100
 r_val = pearson_r(d_sim_all, d_obs_all)
 rho   = spearman_r(d_sim_all, d_obs_all)
 
-# Afetados vs não-afetados
+# Affected vs not affected
 affected   = [r for r in results if r['affected']]
 unaffected = [r for r in results if not r['affected']]
 
@@ -302,15 +302,15 @@ for r in affected_sorted:
     print(f'{r["prod"]:<6} {r["exp"]:<5} {r["tariff"]*100:>7.1f}%'
           f' {r["d_sim"]*100:>+7.2f}%  {r["d_obs"]*100:>+7.2f}%  {ok}')
 
-# ── Gráfico focado nos países afetados ───────────────────────────────────────
-# O modelo só faz previsão direcional para países afetados (choque > 0).
-# Para não-afetados, o choque é ≈ 0, então o modelo prevê Δ≈0 — o hit
-# rate deles (56%) não reflete capacidade preditiva, só ruído residual.
-# O teste relevante é: o modelo previu corretamente que CN e RU perdem share?
+# ── Chart focused on the affected countries ───────────────────────────────────────
+# The model only makes a directional prediction for affected countries (shock > 0).
+# For unaffected countries the shock is ≈ 0, so the model predicts Δ≈0; their hit
+# rate (56%) does not reflect predictive ability, only residual noise.
+# The relevant test is: did the model correctly predict that CN and RU lose share?
 
 fig, axes = plt.subplots(1, 2, figsize=(13, 5.5))
 
-# ── Painel 1: scatter só dos afetados ────────────────────────────────────────
+# ── Panel 1: scatter of the affected only ────────────────────────────────────────
 ax = axes[0]
 COR_CN = '#e74c3c'
 COR_RU = '#8e44ad'
@@ -362,7 +362,7 @@ ax.spines['top'].set_visible(False); ax.spines['right'].set_visible(False)
 ax.tick_params(labelsize=9)
 
 
-# ── Painel 2: magnitude por produto — barra simulado vs observado ─────────────
+# ── Panel 2: magnitude by product, simulated vs observed bar ─────────────
 ax2 = axes[1]
 prods_with_data = sorted(set(r['prod'] for r in affected))
 x_base = range(len(prods_with_data))
@@ -416,4 +416,4 @@ fig.suptitle(
 plt.tight_layout(w_pad=3.5)
 plt.savefig(out + 'G_antidumping_2016_test.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('\nSalvo: G_antidumping_2016_test.png')
+print('\nSaved: G_antidumping_2016_test.png')

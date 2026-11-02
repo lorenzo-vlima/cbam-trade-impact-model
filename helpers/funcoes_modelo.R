@@ -1,11 +1,11 @@
 ############################################
 # helpers/funcoes_modelo.R
 # ----------------------------------------
-# Funções compartilhadas de estimação.
-# Usado por todos os modelos em modelos/*/
+# Shared estimation functions.
+# Used by all models in modelos/*/
 ############################################
 
-# ── Formatação ────────────────────────────────────────────────────────────────
+# ── Formatting ────────────────────────────────────────────────────────────────
 
 sig_label <- function(p) {
   case_when(p < 0.01 ~ "***", p < 0.05 ~ "**", p < 0.10 ~ "*", TRUE ~ "")
@@ -19,7 +19,7 @@ fmt_coef <- function(b, se) {
   paste0(round(b, 3), sig, " (", round(se, 3), ")")
 }
 
-# ── Pesos temporais ───────────────────────────────────────────────────────────
+# ── Time weights ───────────────────────────────────────────────────────────
 
 preparar_pesos <- function(dados, usar_peso_tempo, half_life) {
   if (usar_peso_tempo) {
@@ -39,9 +39,9 @@ calcular_shrinkage <- function(se_global, se_dif) {
   se_global^2 / (se_global^2 + se_dif^2)
 }
 
-# ── Extração de betas globais por produto ─────────────────────────────────────
-# Recebe um modelo fixest com interação log_price_rel:factor(product)
-# Retorna tibble com product, beta_global, se_global
+# ── Extraction of global betas by product ─────────────────────────────────────
+# Takes a fixest model with the log_price_rel:factor(product) interaction
+# Returns a tibble with product, beta_global, se_global
 
 extrair_betas_globais <- function(model, prefixo_termo = "log_price_rel:factor\\(product\\)") {
   tidy(model) %>%
@@ -51,10 +51,10 @@ extrair_betas_globais <- function(model, prefixo_termo = "log_price_rel:factor\\
     mutate(product = str_trim(as.character(product)))
 }
 
-# ── Montagem do betas_simulacao com shrinkage ─────────────────────────────────
-# Recebe: todos_produtos, betas_globais, lista de betas_dif por país,
+# ── Building betas_simulacao with shrinkage ─────────────────────────────────
+# Takes: todos_produtos, betas_globais, list of betas_dif by country,
 #         paises_grupo, z_critico
-# Retorna: betas_simulacao com colunas beta_base, beta_dif_X, beta_X,
+# Returns: betas_simulacao with columns beta_base, beta_dif_X, beta_X,
 #          w_X, beta_sim_X, fonte_X
 
 montar_betas_simulacao <- function(todos_produtos, betas_globais,
@@ -88,11 +88,11 @@ montar_betas_simulacao <- function(todos_produtos, betas_globais,
           .data[[paste0("w_", cod)]] * .data[[paste0("beta_", cod)]] +
           (1 - .data[[paste0("w_", cod)]]) * beta_base,
         !!paste0("fonte_", cod) := case_when(
-          is.na(.data[[se_dif_col]])           ~ "global (sem diferencial)",
-          .data[[paste0("w_", cod)]] >= 0.9    ~ "especifico (w>=0.9)",
+          is.na(.data[[se_dif_col]])           ~ "global (no differential)",
+          .data[[paste0("w_", cod)]] >= 0.9    ~ "specific (w>=0.9)",
           .data[[paste0("w_", cod)]] <= 0.1    ~ "global (w<=0.1)",
           TRUE                                  ~ paste0(
-            "misto (w=", round(.data[[paste0("w_", cod)]], 2), ")"
+            "mixed (w=", round(.data[[paste0("w_", cod)]], 2), ")"
           )
         )
       )

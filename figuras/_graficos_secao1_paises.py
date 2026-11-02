@@ -11,9 +11,9 @@ out  = root + '/figuras_geradas/'
 rcParams['font.family'] = 'sans-serif'
 rcParams['font.size']   = 10
 
-# ── Dados (modelo 2010-2025, volumes 2023-2025) ────────────────────────────────
+# ── Data (model 2010-2025, volumes 2023-2025) ────────────────────────────────
 # (label, β_BR, β_AR, β_global, vol_BR%, vol_AR%)
-# Ordem: menos processado (base) → mais processado (topo)
+# Order: least processed (bottom) → most processed (top)
 grupos_FA = [
     ('Long &\ntubular',           -1.352, -0.790, -1.512,  2.9, 95.0),
     ('Semi-finished\n& flat',     -3.482, -1.859, -2.303, 16.5,  5.0),
@@ -45,7 +45,7 @@ beta_setor = {
     'CE': {'BR': -1.611, 'AR': -0.188},
 }
 
-BETA_THR = 0.08   # diferença mínima para mostrar β global separado
+BETA_THR = 0.08   # minimum difference to show the global β separately
 FS_BETA  = 6.5
 
 def _vol_annot(ax, val, yy, col, vol):
@@ -78,7 +78,7 @@ def plot_painel_single(ax, grupos, cor_pais, setor_key, titulo,
 
         close = abs(b_pais - b_glb) < 0.25
 
-        # Linha pais → global
+        # Country → global line
         ax.plot([b_pais, b_glb], [y, y], color='#cccccc',
                 linewidth=1.2, zorder=1, alpha=0.7)
 
@@ -86,7 +86,7 @@ def plot_painel_single(ax, grupos, cor_pais, setor_key, titulo,
         ax.scatter(b_glb, y, s=75, color='#aaaaaa', marker='s',
                    zorder=3, linewidths=0.5, edgecolors='#888888', alpha=0.85)
 
-        # País
+        # Country
         s_pais = max(60, 55 + vol * 14)
         ax.scatter(b_pais, y, s=s_pais, color=cor_pais, marker=marker,
                    zorder=5, linewidths=1.2, edgecolors='white',
@@ -95,18 +95,18 @@ def plot_painel_single(ax, grupos, cor_pais, setor_key, titulo,
         # Volume (horizontal, ao lado do marcador)
         _vol_annot(ax, b_pais, y, cor_pais, vol)
 
-        # β do país — ACIMA do marcador (não conflita com volume que fica ao lado)
+        # country β, ABOVE the marker (does not clash with the volume beside it)
         ax.text(b_pais, y + 0.14, f'{b_pais:.2f}', fontsize=FS_BETA,
                 color=cor_pais, ha='center', va='bottom', alpha=0.92,
                 zorder=6, clip_on=False)
 
-        # β global — ABAIXO do quadrado global, só se diferente do país
+        # global β, BELOW the global square, only if different from the country
         if abs(b_glb - b_pais) > BETA_THR:
             ax.text(b_glb, y - 0.15, f'{b_glb:.2f}', fontsize=FS_BETA,
                     color='#888888', ha='center', va='top', alpha=0.85,
                     zorder=6, clip_on=False)
 
-    # Linha de setor
+    # Sector line
     b_set = beta_setor[setor_key][pais_label]
     ax.axvline(b_set, color=cor_pais, linewidth=1.3, linestyle=':',
                alpha=0.55, zorder=0)
@@ -160,7 +160,7 @@ fig.suptitle('Estimated market share price elasticities by product group — Bra
 plt.tight_layout()
 plt.savefig(out + 'G1_elasticidades_brasil.png', dpi=160, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_brasil.png')
+print('Saved: G1_elasticidades_brasil.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -196,4 +196,4 @@ fig.suptitle('Estimated market share price elasticities by product group — Arg
 plt.tight_layout()
 plt.savefig(out + 'G1_elasticidades_argentina.png', dpi=160, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_argentina.png')
+print('Saved: G1_elasticidades_argentina.png')

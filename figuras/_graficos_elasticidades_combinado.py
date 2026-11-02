@@ -1,6 +1,6 @@
 """
-Figura combinada: Brasil, Argentina e Global numa única figura.
-Substituição das Figuras 1 e 2 separadas por um único painel 1×3.
+Combined figure: Brazil, Argentina and Global in a single figure.
+Replaces the separate Figures 1 and 2 with a single 1×3 panel.
 """
 import sys
 import matplotlib.pyplot as plt
@@ -36,8 +36,8 @@ grupos_CE = [
 COR_FA = '#2c6e9e'
 COR_AL = '#c0392b'
 COR_CE = '#27ae60'
-COR_BR = '#2c6e9e'   # círculo cheio — cor do setor
-COR_AR = '#e67e22'   # triângulo cheio — laranja para distinguir do setor
+COR_BR = '#2c6e9e'   # filled circle, sector colour
+COR_AR = '#e67e22'   # filled triangle, orange to distinguish it from the sector
 COR_GL = '#888888'   # quadrado cinza
 
 beta_setor_BR  = {'FA': -0.749, 'AL': -0.662, 'CE': -1.611}
@@ -77,26 +77,26 @@ def plot_painel(ax, grupos, cor_setor, setor_key, titulo, x_min=-4.5, x_max=0.6)
         b_br, b_ar, b_gl = g[1], g[2], g[3]
         v_br, v_ar        = g[4], g[5]
 
-        # Linha conectando os três pontos
+        # Line connecting the three points
         betas_sorted = sorted([b_br, b_ar, b_gl])
         ax.plot([betas_sorted[0], betas_sorted[-1]], [y, y],
                 color='#cccccc', linewidth=1.3, zorder=1, alpha=0.8)
 
-        # Global (quadrado cinza) — sempre visível
+        # Global (grey square), always visible
         ax.scatter(b_gl, y, s=80, color=COR_GL, marker='s',
                    zorder=3, linewidths=0.6, edgecolors='#666', alpha=0.85)
 
-        # Argentina (triângulo laranja)
+        # Argentina (orange triangle)
         s_ar = max(75, 60 + v_ar * 14)
         ax.scatter(b_ar, y, s=s_ar, color=COR_AR, marker='^',
                    zorder=5, linewidths=1.2, edgecolors='white', alpha=0.95)
 
-        # Brasil (círculo cor do setor)
+        # Brazil (circle in the sector colour)
         s_br = max(75, 60 + v_br * 14)
         ax.scatter(b_br, y, s=s_br, color=cor_setor, marker='o',
                    zorder=6, linewidths=1.2, edgecolors='white', alpha=0.95)
 
-        # Anotações de beta — Brasil acima, Argentina abaixo, Global abaixo
+        # Beta annotations: Brazil above, Argentina below, Global below
         ax.text(b_br, y + 0.22, f'{b_br:.2f}', fontsize=FS_BETA,
                 color=cor_setor, ha='center', va='bottom', zorder=8,
                 clip_on=False, bbox=LBBOX)
@@ -112,7 +112,7 @@ def plot_painel(ax, grupos, cor_setor, setor_key, titulo, x_min=-4.5, x_max=0.6)
         _vol_annot(ax, b_br, y, cor_setor, v_br, offset_y=0.0)
         _vol_annot(ax, b_ar, y, COR_AR,    v_ar, offset_y=0.0)
 
-    # Linhas verticais dos betas setoriais
+    # Vertical lines for the sector betas
     for bsec, col, ls, lw in [
         (beta_setor_BR[setor_key],  cor_setor, ':',  1.4),
         (beta_setor_AR[setor_key],  COR_AR,    '-.',  1.2),
@@ -141,23 +141,23 @@ def plot_painel(ax, grupos, cor_setor, setor_key, titulo, x_min=-4.5, x_max=0.6)
 fig, axes = plt.subplots(1, 3, figsize=(13, 5.8),
                          gridspec_kw={'width_ratios': [1, 1, 1]})
 
-plot_painel(axes[0], grupos_FA, COR_FA, 'FA', 'Ferro & Aço',  x_min=-4.5, x_max=0.6)
-plot_painel(axes[1], grupos_AL, COR_AL, 'AL', 'Alumínio',     x_min=-2.5, x_max=0.5)
-plot_painel(axes[2], grupos_CE, COR_CE, 'CE', 'Cimento',      x_min=-2.0, x_max=0.3)
+plot_painel(axes[0], grupos_FA, COR_FA, 'FA', 'Iron & Steel',  x_min=-4.5, x_max=0.6)
+plot_painel(axes[1], grupos_AL, COR_AL, 'AL', 'Aluminium',     x_min=-2.5, x_max=0.5)
+plot_painel(axes[2], grupos_CE, COR_CE, 'CE', 'Cement',      x_min=-2.0, x_max=0.3)
 
-axes[1].set_xlabel('Elasticidade-preço do market share (β)', fontsize=FS_XLABEL, labelpad=7)
+axes[1].set_xlabel('Price elasticity of market share (β)', fontsize=FS_XLABEL, labelpad=7)
 
 # Legenda
 dot_br  = mlines.Line2D([], [], color=COR_BR, marker='o', linestyle='None',
-                         markersize=8,  label='Brasil (círculo, tamanho ∝ vol. exportado 2023–25)')
+                         markersize=8,  label='Brazil (circle, size ∝ exported volume 2023–25)')
 dot_ar  = mlines.Line2D([], [], color=COR_AR, marker='^', linestyle='None',
-                         markersize=8,  label='Argentina (triângulo, tamanho ∝ vol. exportado 2023–25)')
+                         markersize=8,  label='Argentina (triangle, size ∝ exported volume 2023–25)')
 dot_gl  = mlines.Line2D([], [], color=COR_GL, marker='s', linestyle='None',
                          markersize=6,  label='Global β (quadrado cinza)')
 lin_br  = mlines.Line2D([], [], color=COR_BR, linestyle=':',   linewidth=1.4,
-                         label='β setorial — Brasil (pontilhado)')
+                         label='β setorial — Brazil (pontilhado)')
 lin_ar  = mlines.Line2D([], [], color=COR_AR, linestyle='-.',  linewidth=1.2,
-                         label='β setorial — Argentina (traço-ponto)')
+                         label='Sector β, Argentina (dash-dot)')
 lin_gl  = mlines.Line2D([], [], color=COR_GL, linestyle='--',  linewidth=1.0,
                          label='β setorial — Global (tracejado)')
 
@@ -165,15 +165,15 @@ fig.legend(handles=[dot_br, dot_ar, dot_gl, lin_br, lin_ar, lin_gl],
            fontsize=FS_LEGEND, loc='lower center', ncol=3,
            bbox_to_anchor=(0.5, 0.0), framealpha=0.95)
 
-note = ('Nota: β acima = Brasil; β abaixo = Argentina; β omitido quando virtualmente idêntico ao Brasil. '
+note = ('Note: β above = Brazil; β below = Argentina; β omitted when virtually identical to Brazil. '
         'Volume share (%) anotado junto ao marcador quando > 2%.')
 fig.text(0.01, -0.07, note, fontsize=FS_NOTE, color='#555', style='italic')
 
 fig.suptitle(
-    'Elasticidades-preço do market share por grupo de produto — Brasil, Argentina e Global',
+    'Price elasticities of market share by product group: Brazil, Argentina and Global',
     fontsize=FS_TITLE, fontweight='bold', y=1.03)
 
 plt.tight_layout(w_pad=2.8, rect=[0, 0.14, 1, 1])
 plt.savefig(out + 'G1_elasticidades_combinado.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_combinado.png')
+print('Saved: G1_elasticidades_combinado.png')

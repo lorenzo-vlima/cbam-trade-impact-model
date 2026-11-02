@@ -1,25 +1,25 @@
 ############################################
 # 03_paises.R — PPML share
 # ----------------------------------------
-# Dois estágios:
-#   1. Offset com beta_global_p por produto
-#   2. Diferenciais por país (modo individual)
+# Two stages:
+#   1. Offset with beta_global_p by product
+#   2. Country differentials (individual mode)
 # Shrinkage: w = se_global² / (se_global² + se_dif²)
 #
 # Depende de: 01_limpeza.R, 02_modelo.R
 # Produz: betas_simulacao, tabela_setor
 ############################################
 
-cat("[ 03 ] Betas por país...\n")
-cat("  Países:", paste(paises_grupo, collapse = ", "), "\n")
-cat("  Beta médio global:", round(mean(betas_modelo_global$beta_global, na.rm = TRUE), 4), "\n")
+cat("[ 03 ] Betas by country...\n")
+cat("  Countries:", paste(paises_grupo, collapse = ", "), "\n")
+cat("  Global mean beta:", round(mean(betas_modelo_global$beta_global, na.rm = TRUE), 4), "\n")
 
 todos_produtos <- df %>%
   distinct(product) %>%
   mutate(product = str_trim(as.character(product))) %>%
   arrange(product)
 
-# ── Preparar dataset com offset ───────────────────────────────────────────────
+# ── Prepare dataset with offset ───────────────────────────────────────────────
 
 df_conj <- preparar_pesos(df, usar_peso_tempo, half_life) %>%
   left_join(betas_modelo_global %>% select(product, beta_global), by = "product") %>%
@@ -34,9 +34,9 @@ formula_conj <- as.formula(paste(
   "| exporter^product + product^year"
 ))
 
-cat("  Fórmula:", deparse(formula_conj), "\n")
+cat("  Formula:", deparse(formula_conj), "\n")
 
-# ── Estimação ─────────────────────────────────────────────────────────────────
+# ── Estimation ─────────────────────────────────────────────────────────────────
 
 model_conjunto <- fepois(
   formula_conj,
@@ -45,14 +45,14 @@ model_conjunto <- fepois(
   cluster = ~exporter + year
 )
 
-registrar_resumo(model_conjunto$nobs, "03", "08. obs modelo conjunto",
-                 nota = paste("modo: individual | países:", paste(paises_grupo, collapse = ", ")))
+registrar_resumo(model_conjunto$nobs, "03", "08. obs in joint model",
+                 note = paste("mode: individual | countries:", paste(paises_grupo, collapse = ", ")))
 
 etable(model_conjunto,
        tex  = TRUE,
        file = file.path(dir_output, "3_tabela_conjunto.tex"))
 
-# ── Extrair diferenciais por país ─────────────────────────────────────────────
+# ── Extract country differentials ─────────────────────────────────────────────
 
 coefs <- tidy(model_conjunto)
 
@@ -71,27 +71,27 @@ betas_dif_list <- map(paises_grupo, function(cod) {
     )
 })
 
-# ── Montar betas_simulacao com shrinkage ──────────────────────────────────────
+# ── Build betas_simulacao with shrinkage ──────────────────────────────────────
 
 betas_simulacao <- montar_betas_simulacao(
   todos_produtos, betas_modelo_global,
   betas_dif_list, paises_grupo, z_critico
 )
 
-cat("\n  === BETAS PARA SIMULAÇÃO ===\n")
+cat("\n  === BETAS FOR SIMULATION ===\n")
 print(betas_simulacao, n = Inf)
 
-# Distribuição de pesos
+# Weight distribution
 for (cod in paises_grupo) {
   col_fonte <- paste0("fonte_", cod)
   if (col_fonte %in% names(betas_simulacao)) {
-    cat(sprintf("\n  %s — distribuição:\n", cod))
+    cat(sprintf("\n  %s — distribution:\n", cod))
     tab <- table(betas_simulacao[[col_fonte]])
     for (nm in names(tab)) cat(sprintf("    %s: %d\n", nm, tab[nm]))
   }
 }
 
-# ── Tabela setor (ponderada por volume) ───────────────────────────────────────
+# ── Sector table (volume-weighted) ───────────────────────────────────────
 
 ton_setor <- df %>%
   filter(year >= (ano_corte - janela_base + 1), year <= ano_corte) %>%

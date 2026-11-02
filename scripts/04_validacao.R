@@ -1,23 +1,23 @@
 ############################################
 # 04_validacao.R — PPML share
 # ----------------------------------------
-# Validação out-of-sample genuína:
-#   1. Reestima até ano_val_treino
-#   2. Prevê share para cada ano em anos_val_teste
-#   3. Compara previsto vs. real — por ano e consolidado
+# Genuine out-of-sample validation:
+#   1. Re-estimates up to ano_val_treino
+#   2. Predicts share for each year in anos_val_teste
+#   3. Compares predicted vs. actual, by year and pooled
 #
 # Modos de uso:
 #   Modo simples  : ano_val_treino = 2024, ano_val_teste = 2025
-#   Modo multi-ano: ano_val_treino = 2022, anos_val_teste = c(2023, 2024, 2025)
+#   Multi-year mode: ano_val_treino = 2022, anos_val_teste = c(2023, 2024, 2025)
 #
-#   Se 'anos_val_teste' não estiver definido no ambiente,
-#   o script usa c(ano_val_teste) automaticamente.
+#   If anos_val_teste is not defined in the environment,
+#   the script uses c(ano_val_teste) automatically.
 #
 # Depende de: 01_limpeza.R
-# Produz: df_val, df_val_all (multi-ano), métricas, gráficos
+# Produces: df_val, df_val_all (multi-year), metrics, charts
 ############################################
 
-# ── Resolver quais anos testar ────────────────────────────────────────────────
+# ── Resolve which years to test ────────────────────────────────────────────────
 
 anos_val_teste <- if (exists("anos_val_teste") && length(anos_val_teste) >= 1) {
   sort(unique(anos_val_teste))
@@ -26,23 +26,23 @@ anos_val_teste <- if (exists("anos_val_teste") && length(anos_val_teste) >= 1) {
 }
 
 multi_ano <- length(anos_val_teste) > 1
-ano_pred  <- anos_val_teste[length(anos_val_teste)]   # último ano (para compatibilidade)
+ano_pred  <- anos_val_teste[length(anos_val_teste)]   # last year (for compatibility)
 
 if (multi_ano) {
-  cat(sprintf("[ 04 ] Validação out-of-sample multi-ano (%d → %s)...\n",
+  cat(sprintf("[ 04 ] Multi-year out-of-sample validation (%d → %s)...\n",
               ano_val_treino, paste(anos_val_teste, collapse = ", ")))
 } else {
-  cat("[ 04 ] Validação out-of-sample (", ano_val_treino, "→", ano_pred, ")...\n")
+  cat("[ 04 ] Out-of-sample validation (", ano_val_treino, "→", ano_pred, ")...\n")
 }
 
 arquivo_price <- switch(produto_ativo,
   "aluminio"  = file.path(dir_config, "Base_de_dados_final_Aluminio.csv"),
   "ferro_aco" = file.path(dir_config, "Base_de_dados_final_Ferro.csv"),
   "cimento"   = file.path(dir_config, "Base_de_dados_final_Cimento.csv"),
-  stop("produto_ativo inválido: ", produto_ativo)
+  stop("invalid produto_ativo: ", produto_ativo)
 )
 
-# ── 1. Treino até ano_val_treino ──────────────────────────────────────────────
+# ── 1. Training up to ano_val_treino ──────────────────────────────────────────────
 
 df_train <- preparar_pesos(
   df %>% filter(year >= ano_inicio, year <= ano_val_treino),
@@ -53,9 +53,9 @@ for (cod in paises_grupo) {
   df_train[[paste0("d_", cod)]] <- if_else(df_train$exporter == cod, 1L, 0L)
 }
 
-cat("  Obs treino:", nrow(df_train), "\n")
+cat("  Training obs:", nrow(df_train), "\n")
 
-# ── 2. Estimar global (por produto) ───────────────────────────────────────────
+# ── 2. Estimate global (by product) ───────────────────────────────────────────
 
 model_global_val <- tryCatch(
   fepois(
@@ -65,22 +65,22 @@ model_global_val <- tryCatch(
     cluster = ~exporter + year
   ),
   error = function(e) {
-    cat("  Aviso: fepois global não convergiu —", conditionMessage(e), "\n"); NULL
+    cat("  Warning: global fepois did not converge —", conditionMessage(e), "\n"); NULL
   }
 )
 if (is.null(model_global_val)) {
-  cat("[ 04 ] PULADO (modelo global não estimado)\n\n"); return(invisible(NULL))
+  cat("[ 04 ] SKIPPED (global model not estimated)\n\n"); return(invisible(NULL))
 }
 
 beta_global_val <- extrair_betas_globais(model_global_val) %>%
   rename(beta_base = beta_global, se_base = se_global)
 
 if (nrow(beta_global_val) == 0) {
-  cat("  Aviso: nenhum beta global extraído.\n")
+  cat("  Warning: no global beta extracted.\n")
   cat("[ 04 ] PULADO\n\n"); return(invisible(NULL))
 }
 
-# ── 3. Estimar diferenciais por país ─────────────────────────────────────────
+# ── 3. Estimate country differentials ─────────────────────────────────────────
 
 termos_dif_val <- paste0(
   "log_price_rel:d_", paises_grupo, ":factor(product)",
@@ -105,12 +105,12 @@ model_conj_val <- tryCatch(
     cluster = ~exporter + year
   ),
   error = function(e) {
-    cat("  Aviso: fepois conjunto não convergiu —", conditionMessage(e), "\n"); NULL
+    cat("  Warning: joint fepois did not converge —", conditionMessage(e), "\n"); NULL
   }
 )
 
 if (is.null(model_conj_val)) {
-  cat("  Aviso: usando apenas betas globais (sem diferenciais).\n")
+  cat("  Warning: using global betas only (no differentials).\n")
   coefs_val <- tibble(term = character(), estimate = numeric(), std.error = numeric())
 } else {
   coefs_val <- tidy(model_conj_val)
@@ -137,9 +137,9 @@ betas_val <- montar_betas_simulacao(
   betas_dif_val_list, paises_grupo, z_critico
 )
 
-cat("  Betas de validação:", nrow(betas_val), "produtos\n")
+cat("  Validation betas:", nrow(betas_val), "products\n")
 
-# ── 4. Carregar dados brutos para TODOS os anos de teste ─────────────────────
+# ── 4. Load raw data for ALL test years ─────────────────────
 
 df_raw_todos <- read.csv(file = arquivo_price, header = TRUE, sep = ";") %>%
   mutate(
@@ -154,7 +154,7 @@ df_raw_todos <- read.csv(file = arquivo_price, header = TRUE, sep = ";") %>%
          ton >= 0, euro >= 0)
 
 if (nrow(df_raw_todos) == 0) {
-  cat("  Aviso: sem dados para anos_val_teste =",
+  cat("  Warning: no data for anos_val_teste =",
       paste(anos_val_teste, collapse = ", "), ". Pulando.\n")
   cat("[ 04 ] PULADO\n\n")
   return(invisible(NULL))
@@ -182,7 +182,7 @@ df_raw_todos <- df_raw_todos %>%
   ) %>%
   ungroup()
 
-# ── 5. Base de partida — sempre o último ano de treino ────────────────────────
+# ── 5. Starting base: always the last training year ────────────────────────
 
 df_base <- df %>%
   filter(year == ano_val_treino, !is.na(log_price_rel), !is.na(share)) %>%
@@ -190,7 +190,7 @@ df_base <- df %>%
          log_price_rel_base = log_price_rel,
          share_base         = share)
 
-# ── 6. Loop por ano de teste ──────────────────────────────────────────────────
+# ── 6. Loop over test years ──────────────────────────────────────────────────
 
 beta_global_medio <- mean(betas_val$beta_base, na.rm = TRUE)
 cols_sim          <- paste0("beta_sim_", paises_grupo)
@@ -201,7 +201,7 @@ metricas_por_ano  <- list()
 
 for (ano_t in anos_val_teste) {
 
-  cat(sprintf("\n  ── Ano de teste: %d ──\n", ano_t))
+  cat(sprintf("\n  ── Test year: %d ──\n", ano_t))
 
   df_pred_t <- df_raw_todos %>%
     filter(year == ano_t, !is.na(log_price_rel), !is.na(share)) %>%
@@ -212,10 +212,10 @@ for (ano_t in anos_val_teste) {
   df_val_t <- df_base %>%
     inner_join(df_pred_t, by = c("exporter", "product"))
 
-  cat("  Pares para validação:", nrow(df_val_t), "\n")
+  cat("  Pairs for validation:", nrow(df_val_t), "\n")
 
   if (nrow(df_val_t) < 2) {
-    cat("  Aviso: menos de 2 pares. Pulando este ano.\n")
+    cat("  Warning: fewer than 2 pairs. Skipping this year.\n")
     next
   }
 
@@ -244,20 +244,20 @@ for (ano_t in anos_val_teste) {
 
   resultados_val[[as.character(ano_t)]] <- df_val_t
 
-  # ── Métricas do ano ───────────────────────────────────────────────────────
+  # ── Metrics for the year ───────────────────────────────────────────────────────
   mae_t    <- mean(df_val_t$erro_abs, na.rm = TRUE)
   mape_t   <- mean(df_val_t$erro_pct[is.finite(df_val_t$erro_pct)], na.rm = TRUE)
   n_t      <- sum(!is.na(df_val_t$share_pred) & !is.na(df_val_t$share_real))
   cor_t    <- if (n_t >= 2) cor(df_val_t$share_pred, df_val_t$share_real,
                                  use = "complete.obs") else NA_real_
 
-  # MAE naive: prever share_real = share_base (sem aplicar beta)
+  # Naive MAE: predict share_real = share_base (without applying beta)
   mae_naive_t  <- mean(abs(df_val_t$share_base - df_val_t$share_real), na.rm = TRUE)
 
-  # Skill score: quanto o modelo melhora sobre o naive (>0 = melhor; =1 = perfeito)
+  # Skill score: how much the model improves on the naive (>0 = better; =1 = perfect)
   skill_t      <- if (mae_naive_t > 0) 1 - mae_t / mae_naive_t else NA_real_
 
-  # MAE relativo: erro em % do share médio observado
+  # Relative MAE: error as % of the mean observed share
   share_medio_t  <- mean(df_val_t$share_real, na.rm = TRUE)
   mae_relativo_t <- if (share_medio_t > 0) mae_t / share_medio_t else NA_real_
 
@@ -268,11 +268,11 @@ for (ano_t in anos_val_teste) {
     mae          = mae_t,
     mae_naive    = mae_naive_t,
     skill_score  = skill_t,       # 1 - MAE/MAE_naive  (>0 = melhor que naive)
-    mae_relativo = mae_relativo_t, # MAE / share_médio  (<0.5 = razoável)
+    mae_relativo = mae_relativo_t, # MAE / mean_share  (<0.5 = reasonable)
     share_medio  = share_medio_t
   )
 
-  cat(sprintf("  Cor: %s | MAE: %.6f | MAE naive: %.6f | Skill: %s | MAE/share_médio: %s\n",
+  cat(sprintf("  Cor: %s | MAE: %.6f | MAE naive: %.6f | Skill: %s | MAE/mean_share: %s\n",
               if (is.na(cor_t))   "NA" else round(cor_t, 4),
               mae_t,
               mae_naive_t,
@@ -289,24 +289,24 @@ for (ano_t in anos_val_teste) {
       print(n = Inf)
   }
 
-  # Gráfico geral do ano
+  # Overall chart for the year
   cor_label_t <- if (is.na(cor_t)) "NA" else round(cor_t, 3)
   p_geral_t <- ggplot(df_val_t, aes(x = share_real, y = share_pred)) +
     geom_point(alpha = 0.3) +
     geom_abline(slope = 1, intercept = 0, col = "red", linetype = "dashed") +
     { if (n_t >= 3) geom_smooth(method = "lm", col = "steelblue", se = FALSE) } +
     labs(
-      title    = paste("Validação PPML share —", produto_ativo, "(", ano_t, ")"),
+      title    = paste("PPML share validation —", produto_ativo, "(", ano_t, ")"),
       subtitle = paste0("Cor: ", cor_label_t, " | MAPE: ", round(mape_t * 100, 1), "%"),
-      x = paste("Share real", ano_t),
-      y = paste("Share previsto", ano_t)
+      x = paste("Actual share", ano_t),
+      y = paste("Predicted share", ano_t)
     ) +
     theme_minimal()
 
   ggsave(file.path(dir_output, paste0("5_validacao_geral_", ano_t, ".png")),
          plot = p_geral_t, width = 8, height = 5, dpi = 150)
 
-  # Gráfico top30 do ano
+  # Top-30 chart for the year
   top30_t <- df_raw_todos %>%
     filter(year == ano_t, !is.na(share)) %>%
     group_by(exporter) %>%
@@ -339,17 +339,17 @@ for (ano_t in anos_val_teste) {
     scale_color_manual(values = cores_plot) +
     scale_size_identity() +
     scale_alpha_identity() +
-    labs(title    = paste("Validação PPML share —", produto_ativo, "(", ano_t, ")"),
-         subtitle = paste("Grupo:", nome_grupo),
-         x = paste("Share real", ano_t),
-         y = paste("Share previsto", ano_t),
+    labs(title    = paste("PPML share validation —", produto_ativo, "(", ano_t, ")"),
+         subtitle = paste("Group:", nome_grupo),
+         x = paste("Actual share", ano_t),
+         y = paste("Predicted share", ano_t),
          color = NULL) +
     theme_minimal()
 
   ggsave(file.path(dir_output, paste0("6_validacao_top30_", ano_t, ".png")),
          plot = p_top30_t, width = 8, height = 5, dpi = 150)
 
-  # Gráficos por país do ano
+  # Per-country charts for the year
   for (cod in paises_grupo) {
     df_val_pais_t <- df_val_t %>% filter(exporter == cod) %>% mutate(label = product)
     if (nrow(df_val_pais_t) == 0) next
@@ -358,9 +358,9 @@ for (ano_t in anos_val_teste) {
       geom_text(nudge_y = max(df_val_pais_t$share_real, na.rm = TRUE) * 0.02,
                 size = 3, color = "gray30") +
       geom_abline(slope = 1, intercept = 0, col = "red", linetype = "dashed") +
-      labs(title = paste("Validação —", cod, "(", ano_t, ")"),
-           x = paste("Share real", ano_t),
-           y = paste("Share previsto", ano_t)) +
+      labs(title = paste("Validation —", cod, "(", ano_t, ")"),
+           x = paste("Actual share", ano_t),
+           y = paste("Predicted share", ano_t)) +
       theme_minimal()
     ggsave(file.path(dir_output,
                      paste0("7_validacao_", tolower(cod), "_", ano_t, ".png")),
@@ -371,7 +371,7 @@ for (ano_t in anos_val_teste) {
 # ── 7. Consolidar resultados ──────────────────────────────────────────────────
 
 if (length(resultados_val) == 0) {
-  cat("[ 04 ] PULADO (nenhum ano produziu resultados)\n\n")
+  cat("[ 04 ] SKIPPED (no year produced results)\n\n")
   return(invisible(NULL))
 }
 
@@ -380,7 +380,7 @@ df_val     <- df_val_all %>% filter(ano == max(ano))   # compatibilidade legada
 
 tab_metricas <- bind_rows(metricas_por_ano)
 
-cat("\n  ══ Resumo da validação out-of-sample ══\n")
+cat("\n  ══ Out-of-sample validation summary ══\n")
 cat(sprintf("  Treino: %d–%d | Teste: %s\n",
             ano_inicio, ano_val_treino, paste(anos_val_teste, collapse = ", ")))
 print(tab_metricas %>%
@@ -393,34 +393,34 @@ print(tab_metricas %>%
           share_medio  = round(share_medio, 6)
         ))
 
-cat("\n  Interpretação:\n")
-cat("    skill_score  > 0%  → modelo bate o naive (prever status quo)\n")
-cat("    mae_relativo < 50% → erro < metade do share médio (razoável)\n")
-cat("    mae_relativo < 20% → erro < 1/5 do share médio (bom)\n")
+cat("\n  Interpretation:\n")
+cat("    skill_score  > 0%  → model beats the naive (predicting the status quo)\n")
+cat("    mae_relativo < 50% → error < half the mean share (reasonable)\n")
+cat("    mae_relativo < 20% → error < 1/5 of the mean share (good)\n")
 
 write.csv(tab_metricas,
           file.path(dir_output, "5b_validacao_metricas.csv"),
           row.names = FALSE)
 
-# ── 8. Gráfico consolidado (só multi-ano) ────────────────────────────────────
+# ── 8. Pooled chart (multi-year only) ────────────────────────────────────
 
 if (multi_ano && nrow(tab_metricas) >= 2) {
 
   p_metricas <- tab_metricas %>%
     ggplot(aes(x = ano)) +
-    geom_line(aes(y = cor, color = "Correlação"), linewidth = 1) +
-    geom_point(aes(y = cor, color = "Correlação"), size = 3) +
+    geom_line(aes(y = cor, color = "Correlation"), linewidth = 1) +
+    geom_point(aes(y = cor, color = "Correlation"), size = 3) +
     geom_line(aes(y = skill_score, color = "Skill score"), linewidth = 1, linetype = "dashed") +
     geom_point(aes(y = skill_score, color = "Skill score"), size = 3) +
     geom_hline(yintercept = 0, linetype = "dotted", color = "gray50") +
-    scale_color_manual(values = c("Correlação" = "#1F77B4", "Skill score" = "#D62728")) +
+    scale_color_manual(values = c("Correlation" = "#1F77B4", "Skill score" = "#D62728")) +
     scale_x_continuous(breaks = anos_val_teste) +
     labs(
-      title    = paste("Qualidade preditiva out-of-sample —", produto_ativo),
-      subtitle = paste0("Treino até ", ano_val_treino,
-                        " | Previsão: ", paste(anos_val_teste, collapse = ", "),
+      title    = paste("Out-of-sample predictive quality —", produto_ativo),
+      subtitle = paste0("Training up to ", ano_val_treino,
+                        " | Forecast: ", paste(anos_val_teste, collapse = ", "),
                         " | Skill = 1 − MAE/MAE_naive"),
-      x = "Ano de teste", y = NULL, color = NULL
+      x = "Test year", y = NULL, color = NULL
     ) +
     theme_minimal(base_size = 11) +
     theme(legend.position = "bottom")
@@ -428,7 +428,7 @@ if (multi_ano && nrow(tab_metricas) >= 2) {
   ggsave(file.path(dir_output, "5c_validacao_evolucao.png"),
          plot = p_metricas, width = 8, height = 5, dpi = 150)
 
-  # Scatter consolidado: todos os anos juntos, colorido por ano
+  # Pooled scatter: all years together, coloured by year
   p_consolidado <- df_val_all %>%
     ggplot(aes(x = share_real, y = share_pred, color = factor(ano))) +
     geom_point(alpha = 0.25, size = 1.2) +
@@ -436,9 +436,9 @@ if (multi_ano && nrow(tab_metricas) >= 2) {
     facet_wrap(~ano, ncol = length(anos_val_teste)) +
     scale_color_brewer(palette = "Set1") +
     labs(
-      title    = paste("Validação out-of-sample —", produto_ativo),
-      subtitle = paste0("Treino: ", ano_inicio, "–", ano_val_treino),
-      x = "Share real", y = "Share previsto", color = "Ano"
+      title    = paste("Out-of-sample validation —", produto_ativo),
+      subtitle = paste0("Training: ", ano_inicio, "–", ano_val_treino),
+      x = "Actual share", y = "Predicted share", color = "Year"
     ) +
     theme_minimal(base_size = 10) +
     theme(legend.position = "none")

@@ -17,7 +17,7 @@ COR_FA = '#2c6e9e'
 COR_AL = '#c0392b'
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TABELA 1 — Capacidade explicativa (R²)
+# TABLE 1 — Explanatory power (R²)
 # ══════════════════════════════════════════════════════════════════════════════
 
 fig, ax = plt.subplots(figsize=(9, 3.6))
@@ -32,21 +32,21 @@ erro     = [round(1 - r, 3) for r in r2_total]  # nao explicado
 def pct(v): return f'{v*100:.1f}%'
 
 dados = [
-    ['Pseudo-R² — só efeitos fixos',
+    ['Pseudo-R² — fixed effects only',
      '0,782', '0,812', '0,721'],
-    ['Pseudo-R² — modelo completo (FEs + preço)',
+    ['Pseudo-R² — full model (FEs + price)',
      '0,906', '0,935', '0,916'],
-    ['ΔR² marginal do preço',
+    ['Marginal ΔR² of price',
      '0,123', '0,123', '0,195'],
-    ['% variância — efeitos fixos',
+    ['% variance — fixed effects',
      pct(r2_fe[0]), pct(r2_fe[1]), pct(r2_fe[2])],
-    ['% variância — preço relativo',
+    ['% variance — relative price',
      pct(dr2[0]),   pct(dr2[1]),   pct(dr2[2])],
-    ['% variância — não explicada (erro)',
+    ['% variance — unexplained (error)',
      pct(erro[0]),  pct(erro[1]),  pct(erro[2])],
 ]
 
-col_labels = ['Métrica', 'Alumínio', 'Ferro e Aço', 'Cimento']
+col_labels = ['Metric', 'Aluminium', 'Iron & Steel', 'Cement']
 
 table = ax.table(
     cellText=dados,
@@ -59,13 +59,13 @@ table.auto_set_font_size(False)
 table.set_fontsize(9.5)
 table.scale(1, 1.65)
 
-# Cabeçalho
+# Header
 for j in range(4):
     cell = table[0, j]
     cell.set_facecolor('#2d3748')
     cell.set_text_props(color='white', fontweight='bold')
 
-# Linhas alternadas + destaques
+# Alternating rows + highlights
 for i in range(1, len(dados) + 1):
     bg = '#f7fafc' if i % 2 == 0 else 'white'
     for j in range(4):
@@ -77,38 +77,38 @@ for i in range(1, len(dados) + 1):
         if i in [4, 5, 6]:
             cell.set_text_props(fontweight='bold' if j > 0 else 'normal')
 
-# Linha "não explicado" em vermelho suave
+# "Unexplained" row in soft red
 for j in range(4):
     table[6, j].set_facecolor('#fff5f5')
     if j > 0:
         table[6, j].set_text_props(color='#c0392b', fontweight='bold')
 
-# Separadores entre blocos
+# Separators between blocks
 for j in range(4):
-    table[3, j].set_edgecolor('#2d3748')   # após R² total
-    table[4, j].set_edgecolor('#aaaaaa')   # início bloco %
+    table[3, j].set_edgecolor('#2d3748')   # after total R²
+    table[4, j].set_edgecolor('#aaaaaa')   # start of % block
 
-ax.set_title('Decomposição da capacidade explicativa — PPML (pseudo-R²)',
+ax.set_title('Decomposition of explanatory power — PPML (pseudo-R²)',
              fontsize=11, fontweight='bold', pad=12, loc='left')
 
-note = ('Nota: % variância calculada em relação à variância total (1). '
-        'Efeitos fixos: exporter×produto e produto×ano. '
-        'A soma das três parcelas é 100% por construção.')
+note = ('Note: % variance computed relative to the total variance (1). '
+        'Fixed effects: exporter×product and product×year. '
+        'The three components sum to 100% by construction.')
 fig.text(0.02, 0.01, note, fontsize=7.5, color='#555555', style='italic')
 
 plt.tight_layout()
 plt.savefig(out + 'T_capacidade_explicativa.png', dpi=160, bbox_inches='tight')
 plt.close()
-print('Salvo: T_capacidade_explicativa.png')
+print('Saved: T_capacidade_explicativa.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FIGURA 1 — Dot plot: elasticidades por grupo + nível de setor
+# FIGURE 1 — Dot plot: elasticities by group + sector level
 # ══════════════════════════════════════════════════════════════════════════════
 
 # (label, β_BR, β_AR, β_global, vol_BR%, vol_AR%)
-# Valores de _calcula_grupos.py — modelo 2010-2025, volumes 2023-2025
-# Ordem: menos processado (baixo) → mais processado (cima)
+# Values from _calcula_grupos.py: model 2010-2025, volumes 2023-2025
+# Order: least processed (bottom) → most processed (top)
 grupos_FA = [
     ('Long &\ntubular',           -1.352, -0.790, -1.512,  2.9, 95.0),  # mais processado → topo
     ('Semi-finished\n& flat',     -3.482, -1.859, -2.303, 16.5,  5.0),
@@ -138,15 +138,15 @@ beta_setor = {
 }
 
 Y_OFF    = 0.20   # offset vertical entre dots BR e AR
-BETA_THR = 0.10   # diferença mínima para mostrar β global separado
-FS_BETA  = 6.5    # fontsize das anotações de β
+BETA_THR = 0.10   # minimum difference to show the global β separately
+FS_BETA  = 6.5    # fontsize of the β annotations
 
 def _vol_annot(ax, val, yy, col, vol, x_min, x_max):
-    """Anotação de volume; garante que não sai pelos bordos."""
+    """Volume annotation; makes sure it does not fall off the edges."""
     if vol <= 2.0:
         return
     if vol > 35:
-        # texto à esquerda do ponto
+        # text to the left of the point
         ax.annotate(f'{vol:.0f}%', xy=(val, yy), xytext=(-14, 0),
                     textcoords='offset points', fontsize=8, color=col,
                     va='center', ha='right', alpha=0.9, clip_on=False)
@@ -164,7 +164,7 @@ def plot_painel(ax, grupos, cor_br, cor_ar, titulo, setor_key, x_min=-6.5):
         yBR = y + Y_OFF
         yAR = y - Y_OFF
 
-        # Linha de conexão BR-AR
+        # BR-AR connecting line
         ax.plot([bBR, bAR], [yBR, yAR], color='#cccccc',
                 linewidth=1.2, zorder=1, alpha=0.7)
 
@@ -172,39 +172,39 @@ def plot_painel(ax, grupos, cor_br, cor_ar, titulo, setor_key, x_min=-6.5):
         ax.scatter(bGlb, y, s=75, color='#aaaaaa', marker='s',
                    zorder=3, linewidths=0.5, edgecolors='#888888', alpha=0.85)
 
-        # Brazil (círculo) — mais opaco quando sobrepõe
+        # Brazil (circle), more opaque when overlapping
         sBR   = max(60, 55 + vol_BR * 14)
         close = abs(bBR - bAR) < 0.25
         ax.scatter(bBR, yBR, s=sBR, color=cor_br, marker='o', zorder=5,
                    linewidths=1.2, edgecolors='white', alpha=1.0 if close else 0.92)
 
-        # Argentina (triângulo)
+        # Argentina (triangle)
         sAR = max(60, 55 + vol_AR * 14)
         ax.scatter(bAR, yAR, s=sAR, color=cor_ar, marker='^', zorder=4,
                    linewidths=1.2, edgecolors='white', alpha=1.0 if close else 0.92)
 
-        # Anotações de volume (horizontal, ao lado do marcador)
+        # Annotations de volume (horizontal, ao lado do marcador)
         _vol_annot(ax, bBR, yBR, cor_br, vol_BR, x_min, x_max)
         _vol_annot(ax, bAR, yAR, cor_ar, vol_AR, x_min, x_max)
 
-        # Valores de β — separados verticalmente dos rótulos de volume:
-        #   BR:  ACIMA do dot BR (não conflita com volume que está no mesmo y)
-        #   AR:  ABAIXO do dot AR
-        #   Glb: ABAIXO do quadrado global (y central)
+        # β values, vertically separated from the volume labels:
+        #   BR:  ABOVE the BR dot (does not clash with the volume at the same y)
+        #   AR:  BELOW the AR dot
+        #   Glb: BELOW the global square (central y)
         ax.text(bBR, yBR + 0.13, f'{bBR:.2f}', fontsize=FS_BETA, color=cor_br,
                 ha='center', va='bottom', alpha=0.92, zorder=6, clip_on=False)
         ax.text(bAR, yAR - 0.13, f'{bAR:.2f}', fontsize=FS_BETA, color=cor_ar,
                 ha='center', va='top', alpha=0.92, zorder=6, clip_on=False)
-        # Global só se diferente de ambos os países
+        # Global only if different from both countries
         if abs(bGlb - bBR) > BETA_THR and abs(bGlb - bAR) > BETA_THR:
             ax.text(bGlb, y - 0.16, f'{bGlb:.2f}', fontsize=FS_BETA, color='#888888',
                     ha='center', va='top', alpha=0.85, zorder=6, clip_on=False)
 
-    # Linhas de setor (BR e AR)
+    # Sector lines (BR and AR)
     for pais, col, ytext in [('BR', cor_br, 0.40), ('AR', cor_ar, 0.22)]:
         b = beta_setor[setor_key][pais]
         ax.axvline(b, color=col, linewidth=1.3, linestyle=':', alpha=0.55, zorder=0)
-        # posiciona rótulo para não sobrepor borda
+        # positions the label so it does not overlap the border
         x_txt = b + 0.07 if b > x_min + 0.5 else b - 0.07
         ha_txt = 'left' if b > x_min + 0.5 else 'right'
         ax.text(x_txt, ytext, f'{pais}: {b:.3f}',
@@ -251,31 +251,31 @@ fig.suptitle('Estimated market share price elasticities by product group — Bra
 plt.tight_layout()
 plt.savefig(out + 'G1_elasticidades_grupos.png', dpi=160, bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_grupos.png')
+print('Saved: G1_elasticidades_grupos.png')
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TABELA 2 — Validação out-of-sample
+# TABLE 2 — Out-of-sample validation
 # ══════════════════════════════════════════════════════════════════════════════
 
 fig, ax = plt.subplots(figsize=(11, 4.2))
 ax.axis('off')
 
 dados_oos = [
-    # Métrica, AL-BR, AL-AR, FA-BR, FA-AR
-    ['N observações (produto × ano)',        '29',    '14',   '108',  '26'],
-    ['Correlação Δprev × Δrealizado',        '0,781', '0,018','0,626','0,736'],
-    ['Hit ratio (acerto de sinal)',          '86,2%', '71,4%','66,7%','73,1%'],
-    ['Hit ratio ajustado (vs. 50% random)', '+36,2pp','+21,4pp','+16,7pp','+23,1pp'],
-    ['Theil U — vs. persistência (Δ=0)',    '0,687', '0,987', '0,803','0,750'],
-    ['Theil U — vs. média histórica',       '0,690', '1,176', '0,807','0,753'],
-    ['Cor. magnitude quando acerta sinal',  '0,800', '−0,109','0,731','0,799'],
-    ['MAE quando erra sinal',               '0,985', '1,437', '1,075','1,011'],
+    # Metric, AL-BR, AL-AR, FA-BR, FA-AR
+    ['N observations (product × year)',        '29',    '14',   '108',  '26'],
+    ['Correlation Δpredicted × Δactual',        '0,781', '0,018','0,626','0,736'],
+    ['Hit ratio (sign accuracy)',          '86,2%', '71,4%','66,7%','73,1%'],
+    ['Adjusted hit ratio (vs. 50% random)', '+36,2pp','+21,4pp','+16,7pp','+23,1pp'],
+    ['Theil U — vs. persistence (Δ=0)',    '0,687', '0,987', '0,803','0,750'],
+    ['Theil U — vs. historical mean',       '0,690', '1,176', '0,807','0,753'],
+    ['Magnitude corr. when sign is right',  '0,800', '−0,109','0,731','0,799'],
+    ['MAE when sign is wrong',               '0,985', '1,437', '1,075','1,011'],
 ]
 
-col_labels_oos = ['Métrica',
-                  'Alumínio\nBrasil', 'Alumínio\nArgentina',
-                  'Ferro e Aço\nBrasil', 'Ferro e Aço\nArgentina']
+col_labels_oos = ['Metric',
+                  'Aluminium\nBrazil', 'Aluminium\nArgentina',
+                  'Iron & Steel\nBrazil', 'Iron & Steel\nArgentina']
 
 table2 = ax.table(
     cellText=dados_oos,
@@ -288,13 +288,13 @@ table2.auto_set_font_size(False)
 table2.set_fontsize(9)
 table2.scale(1, 1.75)
 
-# Cabeçalho
+# Header
 for j in range(5):
     cell = table2[0, j]
     cell.set_facecolor('#2d3748')
     cell.set_text_props(color='white', fontweight='bold')
 
-# Cores de coluna para AL e FA
+# Column colours for AL and FA
 col_cores = {1: '#ebf5fb', 2: '#ebf5fb', 3: '#eaf4f0', 4: '#eaf4f0'}
 
 for i in range(1, len(dados_oos) + 1):
@@ -309,25 +309,25 @@ for i in range(1, len(dados_oos) + 1):
         if j == 0:
             cell.set_text_props(ha='left')
 
-# Destaque Theil U > 1 (pior que naive) — AR alumínio
+# Highlight Theil U > 1 (worse than naive), AR aluminium
 table2[6, 2].set_facecolor('#fdecea')
 table2[6, 2].set_text_props(color='#c0392b', fontweight='bold')
 
-# Separadores visuais
+# Visual separators
 for j in range(5):
-    table2[2, j].set_edgecolor('#555')   # após N
-    table2[5, j].set_edgecolor('#555')   # após Theil U persist
+    table2[2, j].set_edgecolor('#555')   # after N
+    table2[5, j].set_edgecolor('#555')   # after Theil U persistence
 
-ax.set_title('Validação out-of-sample — variação de share (Δshare, pooled 2023–2025)\n'
-             'Modelo treinado até 2022; testado em 2023–2025',
+ax.set_title('Out-of-sample validation: change in share (Δshare, pooled 2023–2025)\n'
+             'Model trained up to 2022; tested on 2023–2025',
              fontsize=11, fontweight='bold', pad=12, loc='left')
 
-note2 = ('Nota: Theil U < 1 indica que o modelo supera o benchmark naive. '
-         'Theil U > 1 (vermelho) indica que o modelo é inferior ao naive naquela dimensão. '
-         'Cimento omitido por N insuficiente (6 obs Brasil, Argentina indisponível).')
+note2 = ('Note: Theil U < 1 means the model beats the naive benchmark. '
+         'Theil U > 1 (red) means the model is worse than the naive in that dimension. '
+         'Cement omitted due to insufficient N (6 obs for Brazil, Argentina unavailable).')
 fig.text(0.02, 0.0, note2, fontsize=7.5, color='#555', style='italic')
 
 plt.tight_layout()
 plt.savefig(out + 'T_validacao_oos.png', dpi=160, bbox_inches='tight')
 plt.close()
-print('Salvo: T_validacao_oos.png')
+print('Saved: T_validacao_oos.png')

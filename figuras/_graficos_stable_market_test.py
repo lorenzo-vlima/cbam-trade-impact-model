@@ -1,25 +1,25 @@
 """
-Teste de validação em anos com mercado estável.
+Validation test in years with a stable market.
 
-Lógica:
-  Em anos onde as importações totais da UE num produto mal mudaram,
-  qualquer redistribuição de share entre fornecedores é quase pura
-  substituição — menos ruído de choque de demanda agregada.
-  O modelo de preço relativo deveria funcionar melhor nesses anos.
+Logic:
+  In years when total EU imports of a product barely changed,
+  any redistribution of share among suppliers is almost pure
+  substitution, with less aggregate demand shock noise.
+  The relative-price model should work better in those years.
 
 Procedimento:
-  1. Carrega dados brutos (2010-2025) e calcula importações totais UE
+  1. Loads raw data (2010-2025) and computes total EU imports
      por produto×ano.
-  2. Calcula variação anual (Δ%) do mercado total por produto.
-  3. Cruza com o arquivo de validação OOS do modelo v2 (2023-2025).
+  2. Computes the annual change (Δ%) of the total market by product.
+  3. Merges with the OOS validation file of the v2 model (2023-2025).
   4. Classifica produto×ano por quartil de estabilidade do mercado.
-  5. Compara métricas OOS (Pearson r, Spearman rho, hit rate) entre
-     anos de mercado estável vs. instável.
+  5. Compares OOS metrics (Pearson r, Spearman rho, hit rate) between
+     stable vs. unstable market years.
 
 Outputs:
   G_stable_market_scatter.png  — scatter por quartil de estabilidade
-  G_stable_market_metrics.png  — métricas vs. variação do mercado
-  stable_market_results.csv    — tabela de métricas por grupo
+  G_stable_market_metrics.png  — metrics vs. market change
+  stable_market_results.csv    — metrics table by group
 """
 import csv, math, sys
 from collections import defaultdict
@@ -65,9 +65,9 @@ def hit_rate(obs, pred):
     if not obs: return float('nan')
     return sum(1 for o,p in zip(obs,pred) if (o>0)==(p>0)) / len(obs)
 
-# ── Passo 1: importações totais UE por produto×ano ────────────────────────────
+# ── Step 1: total EU imports by product×year ────────────────────────────
 def load_total_imports(csv_path):
-    """Soma ton de todos os exportadores por produto×ano."""
+    """Sums ton of all exporters by product×year."""
     totals = defaultdict(float)
     with open(csv_path, encoding='utf-8') as f:
         reader = csv.DictReader(f, delimiter=';')
@@ -81,13 +81,13 @@ def load_total_imports(csv_path):
             except: pass
     return totals
 
-# ── Passo 2: variação anual do mercado total ──────────────────────────────────
+# ── Step 2: annual change of the total market ──────────────────────────────────
 def compute_market_change(totals):
     """
-    Para cada (produto, ano), calcula |Δ%| em relação ao ano anterior.
+    For each (product, year), computes |Δ%| relative to the previous year.
     Retorna dict (prod, yr) -> abs_pct_change
     """
-    # organiza por produto
+    # organise by product
     by_prod = defaultdict(dict)
     for (prod, yr), ton in totals.items():
         by_prod[prod][yr] = ton
@@ -103,7 +103,7 @@ def compute_market_change(totals):
                 changes[(prod, yr)] = pct
     return changes
 
-# ── Passo 3: validação OOS do modelo v2 ───────────────────────────────────────
+# ── Step 3: OOS validation of the v2 model ───────────────────────────────────────
 def load_val(setor):
     path = f'{base}/{setor}_brasil_e_argentina_individual_post_tax_j3_v2/5c_validacao_delta_dados.csv'
     rows = []
@@ -119,13 +119,13 @@ def load_val(setor):
             rows.append({'prod': prod, 'yr': yr, 'obs': obs, 'pred': pred})
     return rows
 
-# ── Passo 4: métricas por grupo de estabilidade ───────────────────────────────
+# ── Step 4: metrics by stability group ───────────────────────────────
 def metrics_by_stability(val_rows, changes, n_bins=4):
     """
-    Classifica cada observação pelo quartil de estabilidade do seu produto×ano
-    e calcula métricas por quartil.
+    Classifies each observation by the stability quartile of its product×year
+    and computes metrics by quartile.
     """
-    # Enriquece com change
+    # Enrich with change
     enriched = []
     for r in val_rows:
         chg = changes.get((r['prod'], r['yr']), None)
@@ -135,7 +135,7 @@ def metrics_by_stability(val_rows, changes, n_bins=4):
     if not enriched:
         return [], []
 
-    # Quartis de variação (0 = mais estável, 3 = mais volátil)
+    # Change quartiles (0 = most stable, 3 = most volatile)
     chg_vals = sorted(set(r['chg'] for r in enriched))
     n = len(chg_vals)
     quartile_cuts = [chg_vals[int(n * q / n_bins)] for q in range(1, n_bins)]
@@ -149,7 +149,7 @@ def metrics_by_stability(val_rows, changes, n_bins=4):
     for r in enriched:
         r['bin'] = get_bin(r['chg'])
 
-    # Métricas por bin
+    # Metrics by bin
     bin_metrics = []
     for b in range(n_bins):
         subset = [r for r in enriched if r['bin'] == b]
@@ -210,7 +210,7 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
     print(f"{'Quartil':<8} {'N':>5} {'Med Δ%':>8} {'r':>7} {'rho':>7} {'hit':>7}")
     print('-'*50)
     for m in bin_metrics:
-        label = f"Q{m['bin']+1} ({'mais estável' if m['bin']==0 else 'mais volátil' if m['bin']==3 else ''})"
+        label = f"Q{m['bin']+1} ({'most stable' if m['bin']==0 else 'most volatile' if m['bin']==3 else ''})"
         print(f"  {label:<16} {m['n']:>5} {m['med_chg']*100:>7.1f}%"
               f"  {m['r']:>6.3f}  {m['rho']:>6.3f}  {m['hit']*100:>6.1f}%")
         all_results.append({
@@ -220,7 +220,7 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
             'hit': round(m['hit']*100, 2),
         })
 
-    # ── Scatter por quartil ──
+    # ── Scatter by quartile ──
     for q_idx, m in enumerate(bin_metrics):
         ax = fig.add_subplot(gs[row_idx, q_idx])
 
@@ -236,7 +236,7 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
         ax.scatter(pred, obs, s=18, color=cor,
                    alpha=0.55, edgecolors='none', zorder=3)
 
-        # Linha de tendência
+        # Trend line
         if len(pred) > 3:
             n = len(pred)
             mx, my = sum(pred)/n, sum(obs)/n
@@ -253,8 +253,8 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
                 va='top', fontweight='bold')
 
         stability_label = (
-            'mais estável' if m['bin'] == 0 else
-            'mais volátil' if m['bin'] == 3 else ''
+            'most stable' if m['bin'] == 0 else
+            'most volatile' if m['bin'] == 3 else ''
         )
         ax.set_title(
             f'{nome}  Q{m["bin"]+1}\n'
@@ -271,16 +271,16 @@ for row_idx, (setor, nome, cor, data_path) in enumerate(setores_cfg):
         ax.tick_params(labelsize=7)
 
 fig.suptitle(
-    'Validação OOS estratificada por estabilidade do mercado total da UE\n'
-    'Q1 = produto×ano com mercado mais estável (menos choque de demanda)\n'
-    'Q4 = produto×ano com maior variação no mercado total',
+    'OOS validation stratified by stability of the total EU market\n'
+    'Q1 = product×year with the most stable market (least demand shock)\n'
+    'Q4 = product×year with the largest change in the total market',
     fontsize=11, y=1.01)
 
 plt.savefig(out + 'G_stable_market_scatter.png', dpi=300, bbox_inches='tight')
 plt.close()
-print(f'\nSalvo: G_stable_market_scatter.png')
+print(f'\nSaved: G_stable_market_scatter.png')
 
-# ── Gráfico de métricas vs. estabilidade ──────────────────────────────────────
+# ── Chart of metrics vs. stability ──────────────────────────────────────
 fig2, axes2 = plt.subplots(1, 3, figsize=(13, 4.5))
 metrics_labels = [('r', 'Pearson r'), ('rho', 'Spearman ρ'), ('hit', 'Hit rate (%)')]
 
@@ -299,9 +299,9 @@ for ax, (metric, label) in zip(axes2, metrics_labels):
                         textcoords='offset points', fontsize=7.5,
                         color=cor, alpha=0.8)
 
-    ax.set_xlabel('Variação mediana do mercado total UE (%)', fontsize=9.5)
+    ax.set_xlabel('Median change of the total EU market (%)', fontsize=9.5)
     ax.set_ylabel(label, fontsize=9.5)
-    ax.set_title(f'{label} vs. volatilidade do mercado', fontsize=10, fontweight='bold')
+    ax.set_title(f'{label} vs. market volatility', fontsize=10, fontweight='bold')
     ax.legend(fontsize=8, framealpha=0.9)
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -309,14 +309,14 @@ for ax, (metric, label) in zip(axes2, metrics_labels):
     ax.tick_params(labelsize=8)
 
 fig2.suptitle(
-    'Performance do modelo em função da estabilidade do mercado total\n'
-    'Hipótese: em mercados estáveis, variação de share = pura substituição por preço',
+    'Model performance as a function of total market stability\n'
+    'Hypothesis: in stable markets, change in share = pure price substitution',
     fontsize=11, y=1.01)
 
 plt.tight_layout()
 plt.savefig(out + 'G_stable_market_metrics.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G_stable_market_metrics.png')
+print('Saved: G_stable_market_metrics.png')
 
 # ── CSV de resultados ─────────────────────────────────────────────────────────
 import csv as csv_mod
@@ -324,4 +324,4 @@ with open(out + 'stable_market_results.csv', 'w', newline='',
           encoding='utf-8') as f:
     w = csv_mod.DictWriter(f, fieldnames=all_results[0].keys())
     w.writeheader(); w.writerows(all_results)
-print('Salvo: stable_market_results.csv')
+print('Saved: stable_market_results.csv')

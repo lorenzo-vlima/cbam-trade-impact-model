@@ -1,18 +1,18 @@
 ############################################
-# MODELO 01 — PPML com market share — v2
+# MODEL 01 — PPML with market share — v2
 # ----------------------------------------
-# Diferença em relação ao main.R:
-#   Usa funcoes_modelo_v2.R que aplica restrição
-#   de sinal no shrinkage: se beta_sim > 0,
-#   censura beta_country em 0 antes do shrinkage
+# Difference relative to main.R:
+#   Uses funcoes_modelo_v2.R, which applies a sign
+#   constraint in the shrinkage: if beta_sim > 0,
+#   it censors beta_country at 0 before the shrinkage
 #   → beta_final = (1-w) * beta_global (negativo,
-#     menos elástico que o global).
+#     less elastic than the global one).
 #
-#   Produtos afetados (verificados em todos setores):
+#   Affected products (checked in all sectors):
 #     - 260112 BR (ferro_aco): beta_sim +0.177 → -0.033
 #     - 250700 AR (cimento):   beta_sim +1.577 → -0.188
 #
-#   Output salvo em diretório separado (_v2).
+#   Output saved in a separate directory (_v2).
 ############################################
 
 pkgs <- c("tidyverse", "fixest", "broom", "ggplot2", "janitor")
@@ -24,7 +24,7 @@ dir_config  <- "config"
 dir_helpers <- "helpers"
 
 # ----------------------------------------
-# CONFIGURAÇÃO — EDITAR APENAS AQUI
+# CONFIGURATION — EDIT ONLY HERE
 # ----------------------------------------
 
 produto_ativo <- "aluminio"
@@ -80,17 +80,17 @@ projecao_precos <- c(
 )
 
 # ----------------------------------------
-# VALIDAÇÃO
+# VALIDATION
 # ----------------------------------------
 
 if (!modo_grupo %in% c("individual", "agregado"))
-  stop("modo_grupo deve ser 'individual'.")
+  stop("modo_grupo must be 'individual'.")
 
 if (length(paises_grupo) == 0)
-  stop("paises_grupo não pode ser vazio.")
+  stop("paises_grupo cannot be empty.")
 
 # ----------------------------------------
-# PATHS DE OUTPUT — sufixo _v2
+# OUTPUT PATHS — _v2 suffix
 # ----------------------------------------
 
 dir_output <- file.path("outputs",
@@ -99,15 +99,15 @@ dir_output <- file.path("outputs",
 dir.create(dir_output, recursive = TRUE, showWarnings = FALSE)
 
 cat("========================================\n")
-cat("Modelo: PPML share — v2 (sign-constrained shrinkage)\n")
-cat("Período:", ano_inicio, "–", ano_corte, "\n")
-cat("Produto:", toupper(produto_ativo), "\n")
-cat("Países: ", paste(paises_grupo, collapse = ", "), "\n")
+cat("Model: PPML share — v2 (sign-constrained shrinkage)\n")
+cat("Period:", ano_inicio, "–", ano_corte, "\n")
+cat("Product:", toupper(produto_ativo), "\n")
+cat("Countries: ", paste(paises_grupo, collapse = ", "), "\n")
 cat("Output:  ", dir_output, "\n")
 cat("========================================\n\n")
 
 # ----------------------------------------
-# PIPELINE — usa funcoes_modelo_v2.R
+# PIPELINE — uses funcoes_modelo_v2.R
 # ----------------------------------------
 
 source(file.path(dir_scripts, "00_tracking.R"))
@@ -124,7 +124,7 @@ source(file.path(dir_scripts, "08_projecao_cbam.R"))
 source(file.path(dir_scripts, "09_analise.R"))
 
 cat("\n========================================\n")
-cat("CONCLUIDO:", toupper(produto_ativo), "v2\n")
+cat("DONE:", toupper(produto_ativo), "v2\n")
 cat("Output em:", dir_output, "\n")
 cat("========================================\n")
 

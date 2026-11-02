@@ -1,24 +1,24 @@
 # config/aluminio_grupos.R
 # ----------------------------------------
-# Mapeamento de produtos → grupos para
-# o setor de alumínio (capítulo 76 HS).
-# Edite aqui se quiser reorganizar os grupos.
+# Mapping of products → groups for
+# the aluminium sector (HS chapter 76).
+# Edit here to reorganise the groups.
 # ----------------------------------------
 
 grupo_map <- tribble(
   ~product,   ~grupo,  ~grupo_label,
-  "7601",     1,       "Primário e semi-acabado",
-  "7603",     1,       "Primário e semi-acabado",
-  "7604",     1,       "Primário e semi-acabado",
-  "7605",     2,       "Laminados e tubulares",
-  "7606",     2,       "Laminados e tubulares",
-  "7607",     2,       "Laminados e tubulares",
-  "7608",     2,       "Laminados e tubulares",
-  "760900",   2,       "Laminados e tubulares",
-  "7610",     3,       "Manufaturados e acabados",
-  "761100",   3,       "Manufaturados e acabados",
-  "7612",     3,       "Manufaturados e acabados",
-  "761300",   3,       "Manufaturados e acabados",
-  "7614",     3,       "Manufaturados e acabados",
-  "7616",     3,       "Manufaturados e acabados"
+  "7601",     1,       "Primary and semi-finished",
+  "7603",     1,       "Primary and semi-finished",
+  "7604",     1,       "Primary and semi-finished",
+  "7605",     2,       "Rolled and tubular",
+  "7606",     2,       "Rolled and tubular",
+  "7607",     2,       "Rolled and tubular",
+  "7608",     2,       "Rolled and tubular",
+  "760900",   2,       "Rolled and tubular",
+  "7610",     3,       "Manufactured and finished",
+  "761100",   3,       "Manufactured and finished",
+  "7612",     3,       "Manufactured and finished",
+  "761300",   3,       "Manufactured and finished",
+  "7614",     3,       "Manufactured and finished",
+  "7616",     3,       "Manufactured and finished"
 )

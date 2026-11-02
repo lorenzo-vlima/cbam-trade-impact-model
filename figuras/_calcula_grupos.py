@@ -2,12 +2,21 @@
 Computa betas e volumes por grupo a partir dos CSVs de output do modelo.
 Fonte:
   - 8_tabela_betas_grupos.csv  → beta_sim_BR, beta_sim_AR, beta_base por produto + grupo
-  - 28_analise_share_vol_base.csv → ton_pais por (exporter, product)  [base = últimos 3 anos]
+  - 28_analise_share_vol_base.csv → ton_pais by (exporter, product)  [base = last 3 years]
 """
 import csv, sys
 from collections import defaultdict
 
 sys.stdout.reconfigure(encoding='utf-8')
+
+# Group labels written by older model runs were in Portuguese; map them to English.
+LEGACY_LABELS = {
+    'Produtos primários': 'Primary products', 'Semiacabados e planos': 'Semi-finished and flat',
+    'Longos e tubulares': 'Long and tubular', 'Primário e semi-acabado': 'Primary and semi-finished',
+    'Laminados e tubulares': 'Rolled and tubular', 'Manufaturados e acabados': 'Manufactured and finished',
+    'Clínquer': 'Clinker', 'Cimento Portland e similares': 'Portland and similar cements',
+    'Cimentos especiais': 'Special cements', 'Argila': 'Clay',
+}
 
 import os
 base = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'outputs')
@@ -36,10 +45,10 @@ def weighted_avg(values_weights):
         return None
     return sum(v * w for v, w in values_weights if v is not None) / total_w
 
-# ─── Calcula para cada setor ──────────────────────────────────────────────────
+# ─── Compute for each sector ──────────────────────────────────────────────────
 for setor, folder in SETORES.items():
     print(f'\n{"="*60}')
-    print(f'SETOR: {setor.upper()}')
+    print(f'SECTOR: {setor.upper()}')
     print(f'{"="*60}')
 
     betas_path = f'{base}/{folder}/8_tabela_betas_grupos.csv'
@@ -48,22 +57,22 @@ for setor, folder in SETORES.items():
     betas_rows = read_csv(betas_path)
     vol_rows   = read_csv(vol_path)
 
-    # Volumes por (exporter, product)
+    # Volumes by (exporter, product)
     vol = {}
     for r in vol_rows:
         vol[(r['exporter'], r['product'])] = safe_float(r['ton_pais']) or 0.0
 
-    # Volumes total de mercado por product (para pesos quando país não tem exportação)
+    # Total market volume by product (for weights when the country has no exports)
     mkt_vol = {}
     for r in vol_rows:
         mkt_vol[r['product']] = safe_float(r['ton_total_mercado']) or 0.0
 
-    # Produtos por grupo
+    # Products by group
     grupos = defaultdict(list)  # grupo_num → list of row dicts
     for r in betas_rows:
         grupos[int(r['grupo'])].append(r)
 
-    # Totais de volume por país (para % de grupo)
+    # Volume totals by country (for group %)
     total_BR = sum(v for (exp, _), v in vol.items() if exp == 'BR')
     total_AR = sum(v for (exp, _), v in vol.items() if exp == 'AR')
 
@@ -73,9 +82,9 @@ for setor, folder in SETORES.items():
     results = {}
     for g_num in sorted(grupos.keys()):
         rows = grupos[g_num]
-        g_label = rows[0]['grupo_label']
+        g_label = LEGACY_LABELS.get(rows[0]['grupo_label'], rows[0]['grupo_label'])
 
-        # Volumes por produto neste grupo
+        # Volumes by product in this group
         vols_BR = {r['product']: vol.get(('BR', r['product']), 0.0) for r in rows}
         vols_AR = {r['product']: vol.get(('AR', r['product']), 0.0) for r in rows}
         vols_mkt = {r['product']: mkt_vol.get(r['product'], 0.0) for r in rows}
@@ -84,11 +93,11 @@ for setor, folder in SETORES.items():
         tot_AR  = sum(vols_AR.values())
         tot_mkt = sum(vols_mkt.values())
 
-        # Volume % do total exportado pelo país
+        # Volume % of the total exported by the country
         pct_BR = (tot_BR / total_BR * 100) if total_BR > 0 else 0.0
         pct_AR = (tot_AR / total_AR * 100) if total_AR > 0 else 0.0
 
-        # Beta BR — ponderado por volume BR (ou mkt se sem exportação)
+        # Beta BR, weighted by BR volume (or market if no exports)
         if tot_BR > 0:
             b_BR = weighted_avg([(safe_float(r['beta_sim_BR']), vols_BR[r['product']]) for r in rows])
             b_BR_label = 'vol-weighted BR'
@@ -96,7 +105,7 @@ for setor, folder in SETORES.items():
             b_BR = weighted_avg([(safe_float(r['beta_sim_BR']), vols_mkt[r['product']]) for r in rows])
             b_BR_label = 'mkt-weighted (sem exp BR)'
 
-        # Beta AR — ponderado por volume AR (ou mkt se sem exportação)
+        # Beta AR, weighted by AR volume (or market if no exports)
         if tot_AR > 0:
             b_AR = weighted_avg([(safe_float(r['beta_sim_AR']), vols_AR[r['product']]) for r in rows])
             b_AR_label = 'vol-weighted AR'
@@ -104,7 +113,7 @@ for setor, folder in SETORES.items():
             b_AR = weighted_avg([(safe_float(r['beta_sim_AR']), vols_mkt[r['product']]) for r in rows])
             b_AR_label = 'mkt-weighted (sem exp AR)'
 
-        # Beta global — ponderado por volume de mercado
+        # Global beta, weighted by market volume
         b_glb = weighted_avg([(safe_float(r['beta_base']), vols_mkt[r['product']]) for r in rows])
 
         results[g_num] = {
@@ -117,16 +126,16 @@ for setor, folder in SETORES.items():
             'n_prod': len(rows),
         }
 
-        print(f'  Grupo {g_num}: {g_label}  (n={len(rows)} produtos)')
+        print(f'  Group {g_num}: {g_label}  (n={len(rows)} products)')
         print(f'    vol BR: {pct_BR:5.1f}%  vol AR: {pct_AR:5.1f}%')
         print(f'    β_BR:  {b_BR:7.3f}  [{b_BR_label}]')
         print(f'    β_AR:  {b_AR:7.3f}  [{b_AR_label}]')
         print(f'    β_glb: {b_glb:7.3f}  [mkt-weighted]')
         print()
 
-print('\n\n=== CÓDIGO PYTHON (para _graficos_secao1.py) ===\n')
+print('\n\n=== PYTHON CODE (for _graficos_secao1.py) ===\n')
 
-# Re-executa e imprime o código formatado
+# Re-runs and prints the formatted code
 for setor, folder in SETORES.items():
     betas_rows = read_csv(f'{base}/{folder}/8_tabela_betas_grupos.csv')
     vol_rows   = read_csv(f'{base}/{folder}/28_analise_share_vol_base.csv')
@@ -148,7 +157,7 @@ for setor, folder in SETORES.items():
     print(f'grupos_{setor[:2].upper() if setor=="ferro_aco" else setor[:2].upper()} = [')
     for g_num in sorted(grupos.keys()):
         rows = grupos[g_num]
-        g_label = rows[0]['grupo_label']
+        g_label = LEGACY_LABELS.get(rows[0]['grupo_label'], rows[0]['grupo_label'])
         vols_BR  = {r['product']: vol.get(('BR', r['product']), 0.0) for r in rows}
         vols_AR  = {r['product']: vol.get(('AR', r['product']), 0.0) for r in rows}
         vols_mkt = {r['product']: mkt_vol.get(r['product'], 0.0) for r in rows}

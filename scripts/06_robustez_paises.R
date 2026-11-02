@@ -1,15 +1,15 @@
 ############################################
 # 06_robustez_paises.R — PPML share
 # ----------------------------------------
-# PPML restrito ao grupo paises_grupo.
-# Compara betas com o modelo principal.
+# PPML restricted to the paises_grupo group.
+# Compares betas with the main model.
 # Depende de: 01_limpeza.R, 03_paises.R
 ############################################
 
-cat("[ 06 ] Robustez — modelo restrito ao grupo", nome_grupo, "...\n")
+cat("[ 06 ] Robustness — model restricted to group", nome_grupo, "...\n")
 
-label_global <- "Global (todos países)"
-label_rob    <- paste0("Robustez (só ", nome_grupo, ")")
+label_global <- "Global (all countries)"
+label_rob    <- paste0("Robustness (only ", nome_grupo, ")")
 cols_sim     <- paste0("beta_sim_", paises_grupo)
 
 df_grupo_rob <- preparar_pesos(
@@ -17,7 +17,7 @@ df_grupo_rob <- preparar_pesos(
   usar_peso_tempo, half_life
 )
 
-cat("  Obs total:", nrow(df_grupo_rob), "\n")
+cat("  Total obs:", nrow(df_grupo_rob), "\n")
 
 model_rob_paises <- fepois(
   share ~ log_price_rel:factor(product) | exporter^product + product^year,
@@ -45,11 +45,11 @@ comparacao_rob <- betas_simulacao %>%
   mutate(diff_pct = (beta_rob - beta_base) / abs(beta_base) * 100) %>%
   arrange(product)
 
-cat("\n  === COMPARAÇÃO — PRINCIPAL vs. ROBUSTEZ ===\n")
+cat("\n  === COMPARISON — MAIN vs. ROBUSTNESS ===\n")
 print(comparacao_rob, n = Inf)
 
 n_instavel <- sum(abs(comparacao_rob$diff_pct) > 50, na.rm = TRUE)
-cat(sprintf("\n  Produtos com divergência > 50%%: %d de %d\n",
+cat(sprintf("\n  Products with divergence > 50%%: %d of %d\n",
             n_instavel, nrow(comparacao_rob)))
 
 comp_longo <- comparacao_rob %>%
@@ -80,7 +80,7 @@ p_rob <- df_p_rob %>%
   geom_point(size = 3, alpha = 0.85, position = position_dodge(width = 0.4)) +
   scale_color_manual(values = cores_comp) +
   labs(title = paste("Robustez —", produto_ativo),
-       subtitle = paste("Global vs.", nome_grupo, "vs. modelo restrito"),
+       subtitle = paste("Global vs.", nome_grupo, "vs. restricted model"),
        x = "Elasticidade (β)", y = NULL, color = NULL, shape = NULL) +
   theme_minimal() +
   theme(legend.position = "bottom")

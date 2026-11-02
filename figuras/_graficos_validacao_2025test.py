@@ -137,4 +137,4 @@ fig.suptitle(
 plt.tight_layout(w_pad=3.0)
 plt.savefig(out + 'G2_validacao_oos_2025test.png', dpi=300, bbox_inches='tight')
 plt.close()
-print('Salvo: G2_validacao_oos_2025test.png')
+print('Saved: G2_validacao_oos_2025test.png')

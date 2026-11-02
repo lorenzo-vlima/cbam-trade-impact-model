@@ -1,12 +1,12 @@
 ############################################
 # helper_grupos.R
 # ----------------------------------------
-# Função auxiliar para ordenar produtos
-# por grupo e adicionar linhas de resumo
-# nos gráficos com produtos no eixo Y.
+# Helper function to order products
+# by group and add summary rows
+# in charts with products on the Y axis.
 #
 # Usado em: 06, 07, 08
-# Depende de: config/{produto}_grupos.R
+# Depends on: config/{produto}_grupos.R
 ############################################
 
 # Carregar grupo_map do config correspondente
@@ -17,22 +17,22 @@
                         NULL
 )
 
-# Função principal
-# df_plot      : dataframe com coluna de produto e coluna de valor
-# col_produto  : nome da coluna de produto (string)
-# col_valor    : nome da coluna de valor numérico (string)
-# col_peso     : nome da coluna de peso para média ponderada (string ou NULL)
-# cols_resumo  : colunas que definem subgrupos no resumo além de grupo
-#                ex: c("exporter", "cenario_tarifa") para o plot 2 do 07
-#                    c("exporter", "ano") para o heatmap do 08
-#                    c("exporter") para o 06
+# Main function
+# df_plot      : data frame with a product column and a value column
+# col_produto  : name of the product column (string)
+# col_valor    : name of the numeric value column (string)
+# col_peso     : name of the weight column for the weighted mean (string or NULL)
+# cols_resumo  : columns defining subgroups in the summary besides group
+#                e.g. c("exporter", "cenario_tarifa") for plot 2 of 07
+#                     c("exporter", "ano") for the heatmap of 08
+#                     c("exporter") for 06
 preparar_plot_grupos <- function(df_plot,
                                  col_produto  = "product",
                                  col_valor    = "delta_share_pct",
                                  col_peso     = NULL,
                                  cols_resumo  = c("exporter")) {
   
-  # Juntar com grupo_map
+  # Join with grupo_map
   if (!is.null(.grupo_map_df)) {
     df_plot <- df_plot %>%
       left_join(.grupo_map_df %>% select(product, grupo, grupo_label),
@@ -43,10 +43,10 @@ preparar_plot_grupos <- function(df_plot,
       )
   } else {
     df_plot <- df_plot %>%
-      mutate(grupo = 1L, grupo_label = "Todos")
+      mutate(grupo = 1L, grupo_label = "All")
   }
   
-  # Criar linhas de resumo por grupo
+  # Create summary rows by group
   if (!is.null(col_peso) && col_peso %in% names(df_plot)) {
     
     cols_group_by <- c(cols_resumo, "grupo", "grupo_label")
@@ -73,8 +73,8 @@ preparar_plot_grupos <- function(df_plot,
     df_plot <- df_plot %>% mutate(is_resumo = FALSE)
   }
   
-  # Definir ordem do eixo Y:
-  # grupo → resumo do grupo primeiro → produtos ordenados por valor
+  # Define the Y axis order:
+  # group → group summary first → products ordered by value
   df_plot <- df_plot %>%
     arrange(grupo, !is_resumo, .data[[col_valor]])
   

@@ -1,7 +1,7 @@
 """
-Elasticidades-preço por grupo de produto — VERSÃO PONDERADA POR VALOR EXPORTADO.
-Paralela a _graficos_elasticidades_combinado.py (que é por volume).
-Brasil, Argentina e Global numa única figura. Setores: FA e AL.
+Price elasticities by product group, VALUE-WEIGHTED VERSION.
+Parallel to _graficos_elasticidades_combinado.py (which is volume-weighted).
+Brazil, Argentina and Global in a single figure. Sectors: FA and AL.
 Tudo derivado dos outputs v2 (betas por produto) e dos valores 2023-25.
 """
 import csv, sys
@@ -11,6 +11,15 @@ import matplotlib.lines as mlines
 from matplotlib import rcParams
 
 sys.stdout.reconfigure(encoding='utf-8')
+
+# Group labels written by older model runs were in Portuguese; map them to English.
+LEGACY_LABELS = {
+    'Produtos primários': 'Primary products', 'Semiacabados e planos': 'Semi-finished and flat',
+    'Longos e tubulares': 'Long and tubular', 'Primário e semi-acabado': 'Primary and semi-finished',
+    'Laminados e tubulares': 'Rolled and tubular', 'Manufaturados e acabados': 'Manufactured and finished',
+    'Clínquer': 'Clinker', 'Cimento Portland e similares': 'Portland and similar cements',
+    'Cimentos especiais': 'Special cements', 'Argila': 'Clay',
+}
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
 out  = root + '/figuras_geradas/'
 base = root + '/outputs'
@@ -29,8 +38,8 @@ def load_sector(setor):
                     'BR': float(r['beta_sim_BR']),
                     'AR': float(r['beta_sim_AR']),
                     'GL': float(r['beta_base']),
-                    'grupo': (r.get('grupo_label','').strip()
-                              or r.get('grupo','').strip()),
+                    'grupo': LEGACY_LABELS.get(r.get('grupo_label','').strip() or r.get('grupo','').strip(),
+                                           r.get('grupo_label','').strip() or r.get('grupo','').strip()),
                 }
             except: pass
     val = {'BR': defaultdict(float), 'AR': defaultdict(float)}
@@ -81,16 +90,16 @@ def sector_beta_global(binfo, val):
 
 # ── group ordering (primary -> complex), matching the volume figure ───────────
 ORDER = {
-    'ferro_aco': ['Produtos primários','Semiacabados e planos','Longos e tubulares'],
-    'aluminio':  ['Primário e semi-acabado','Laminados e tubulares','Manufaturados e acabados'],
+    'ferro_aco': ['Primary products','Semi-finished and flat','Long and tubular'],
+    'aluminio':  ['Primary and semi-finished','Rolled and tubular','Manufactured and finished'],
 }
 LABELS = {
-    'Produtos primários':'Primaries\n(ore/pig iron)',
-    'Semiacabados e planos':'Semi-finished\n& flat',
-    'Longos e tubulares':'Long &\ntubular',
-    'Primário e semi-acabado':'Primary &\nsemi-finished',
-    'Laminados e tubulares':'Rolled &\ntubular',
-    'Manufaturados e acabados':'Manufactured\n& finished',
+    'Primary products':'Primaries\n(ore/pig iron)',
+    'Semi-finished and flat':'Semi-finished\n& flat',
+    'Long and tubular':'Long &\ntubular',
+    'Primary and semi-finished':'Primary &\nsemi-finished',
+    'Rolled and tubular':'Rolled &\ntubular',
+    'Manufactured and finished':'Manufactured\n& finished',
 }
 
 COR_FA='#2c6e9e'; COR_AL='#c0392b'
@@ -204,4 +213,4 @@ fig.suptitle('Market-share price elasticities by product group — value-weighte
 plt.tight_layout(w_pad=2.8,rect=[0,0.14,1,1])
 plt.savefig(out+'G1_elasticidades_combinado_valor.png',dpi=300,bbox_inches='tight')
 plt.close()
-print('Salvo: G1_elasticidades_combinado_valor.png')
+print('Saved: G1_elasticidades_combinado_valor.png')

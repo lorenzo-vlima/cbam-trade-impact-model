@@ -5,43 +5,43 @@ import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).re
 grupos = {
     '260112':'Primarios', '7201':'Primarios', '7202':'Primarios',
     '7203':'Primarios', '7205':'Primarios',
-    '7206':'Semiacabados e planos', '7207':'Semiacabados e planos',
-    '7208':'Semiacabados e planos', '7209':'Semiacabados e planos',
-    '7210':'Semiacabados e planos', '7211':'Semiacabados e planos',
-    '7212':'Semiacabados e planos', '7218':'Semiacabados e planos',
-    '7219':'Semiacabados e planos', '7220':'Semiacabados e planos',
-    '7221':'Semiacabados e planos', '7225':'Semiacabados e planos',
-    '7226':'Semiacabados e planos',
-    '7213':'Longos e tubulares', '7214':'Longos e tubulares',
-    '7215':'Longos e tubulares', '7216':'Longos e tubulares',
-    '7217':'Longos e tubulares', '7222':'Longos e tubulares',
-    '7223':'Longos e tubulares', '7224':'Longos e tubulares',
-    '7227':'Longos e tubulares', '7228':'Longos e tubulares',
-    '7229':'Longos e tubulares', '7301':'Longos e tubulares',
-    '7302':'Longos e tubulares', '730300':'Longos e tubulares',
-    '7304':'Longos e tubulares', '7305':'Longos e tubulares',
-    '7306':'Longos e tubulares', '7307':'Longos e tubulares',
-    '7308':'Longos e tubulares', '730900':'Longos e tubulares',
-    '7310':'Longos e tubulares', '731100':'Longos e tubulares',
-    '7318':'Longos e tubulares', '7326':'Longos e tubulares',
+    '7206':'Semi-finished and flat', '7207':'Semi-finished and flat',
+    '7208':'Semi-finished and flat', '7209':'Semi-finished and flat',
+    '7210':'Semi-finished and flat', '7211':'Semi-finished and flat',
+    '7212':'Semi-finished and flat', '7218':'Semi-finished and flat',
+    '7219':'Semi-finished and flat', '7220':'Semi-finished and flat',
+    '7221':'Semi-finished and flat', '7225':'Semi-finished and flat',
+    '7226':'Semi-finished and flat',
+    '7213':'Long and tubular', '7214':'Long and tubular',
+    '7215':'Long and tubular', '7216':'Long and tubular',
+    '7217':'Long and tubular', '7222':'Long and tubular',
+    '7223':'Long and tubular', '7224':'Long and tubular',
+    '7227':'Long and tubular', '7228':'Long and tubular',
+    '7229':'Long and tubular', '7301':'Long and tubular',
+    '7302':'Long and tubular', '730300':'Long and tubular',
+    '7304':'Long and tubular', '7305':'Long and tubular',
+    '7306':'Long and tubular', '7307':'Long and tubular',
+    '7308':'Long and tubular', '730900':'Long and tubular',
+    '7310':'Long and tubular', '731100':'Long and tubular',
+    '7318':'Long and tubular', '7326':'Long and tubular',
     '7601':'Primario e semi-acabado', '7603':'Primario e semi-acabado',
     '7604':'Primario e semi-acabado',
-    '7605':'Laminados e tubulares', '7606':'Laminados e tubulares',
-    '7607':'Laminados e tubulares', '7608':'Laminados e tubulares',
-    '760900':'Laminados e tubulares',
-    '7610':'Manufaturados e acabados', '761100':'Manufaturados e acabados',
-    '7612':'Manufaturados e acabados', '761300':'Manufaturados e acabados',
-    '7614':'Manufaturados e acabados', '7616':'Manufaturados e acabados',
+    '7605':'Rolled and tubular', '7606':'Rolled and tubular',
+    '7607':'Rolled and tubular', '7608':'Rolled and tubular',
+    '760900':'Rolled and tubular',
+    '7610':'Manufactured and finished', '761100':'Manufactured and finished',
+    '7612':'Manufactured and finished', '761300':'Manufactured and finished',
+    '7614':'Manufactured and finished', '7616':'Manufactured and finished',
     '252310':'Clinquer',
-    '252321':'Cimento Portland', '252329':'Cimento Portland',
-    '252330':'Cimentos especiais', '252390':'Cimentos especiais',
-    '250700':'Argila',
+    '252321':'Portland cement', '252329':'Portland cement',
+    '252330':'Special cements', '252390':'Special cements',
+    '250700':'Clay',
 }
 
 setores = [
     ('ferro_aco', 'Ferro e Aco',  'Base_de_dados_final_Ferro.csv',    ';'),
     ('aluminio',  'Aluminio',     'Base_de_dados_final_Aluminio.csv', ';'),
-    ('cimento',   'Cimento',      'Base_de_dados_final_Cimento.csv',  ';'),
+    ('cimento',   'Cement',      'Base_de_dados_final_Cimento.csv',  ';'),
 ]
 
 ANOS_BASE = {2023, 2024, 2025}
@@ -96,7 +96,7 @@ for setor, nome, arq_base, sep_base in setores:
 
     grupo_data = {}
     for prod, b in betas.items():
-        g = grupos.get(prod, 'Outros')
+        g = grupos.get(prod, 'Others')
         if g not in grupo_data:
             grupo_data[g] = {'bg': [], 'bBR': [], 'bAR': [], 'wBR': [], 'wAR': [], 'ton': 0, 'eur': 0}
         gd = grupo_data[g]
