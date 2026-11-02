@@ -13,6 +13,10 @@ from matplotlib import rcParams
 
 sys.stdout.reconfigure(encoding='utf-8')
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
+# Run folder = <sector>_<RUN>_<TAG>. RUN is NOME in rodar_modelo.R; override with the
+# environment variables CBAM_RUN / CBAM_TAG if your runs are named differently.
+RUN = os.environ.get('CBAM_RUN', 'brazil_and_argentina')
+TAG = os.environ.get('CBAM_TAG', 'individual_post_tax_j3_v2')
 out  = root + '/figuras_geradas/'
 os.makedirs(out, exist_ok=True)
 base = root + '/outputs'
@@ -23,7 +27,7 @@ NOME  = 'Iron & Steel'
 CEN   = '75/tCO2'
 TAR   = 'MFN'
 
-vdir = f'{base}/{SETOR}_brasil_e_argentina_individual_post_tax_j3_v2'
+vdir = f'{base}/{SETOR}_{RUN}_{TAG}'
 
 # base volume & value per exporter×product
 basevol = {}

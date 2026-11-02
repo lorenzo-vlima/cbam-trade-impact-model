@@ -29,6 +29,10 @@ from matplotlib import rcParams
 sys.stdout.reconfigure(encoding='utf-8')
 
 import os; root = os.path.dirname(os.path.dirname(os.path.abspath(__file__))).replace(chr(92), '/')
+# Run folder = <sector>_<RUN>_<TAG>. RUN is NOME in rodar_modelo.R; override with the
+# environment variables CBAM_RUN / CBAM_TAG if your runs are named differently.
+RUN = os.environ.get('CBAM_RUN', 'brazil_and_argentina')
+TAG = os.environ.get('CBAM_TAG', 'individual_post_tax_j3_v2')
 out  = root + '/figuras_geradas/'
 os.makedirs(out, exist_ok=True)
 cfg  = root + '/config'
@@ -124,7 +128,7 @@ def load_panel(csv_path):
     return panel
 
 def load_betas(setor):
-    path = f'{bdir}/{setor}_brasil_e_argentina_individual_post_tax_j3_v2/8_tabela_betas_grupos.csv'
+    path = f'{bdir}/{setor}_{RUN}_{TAG}/8_tabela_betas_grupos.csv'
     betas = {}
     with open(path, encoding='utf-8') as f:
         for row in csv.DictReader(f):
