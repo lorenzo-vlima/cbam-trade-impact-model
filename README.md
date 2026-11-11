@@ -35,6 +35,7 @@ carbon prices and two tariff regimes (MFN and Mercosul).
 ```
 paper/           the paper (PDF)
 CONFIGURATION.md every option, every fixed choice, and why (read this next)
+DATA.md          data sources: database, version, extraction and treatment
 main_v2.R        official model; configuration at the top
 rodar_modelo.R   runner: set PRODUTO / PAISES / NOME and run
 scripts/         pipeline 00 to 09 (+ 04b), sourced in order by main_v2.R
@@ -160,8 +161,12 @@ identifiers (for example `cenario_carbono`, `13_cbam_resumo_pais.csv`).
 
 ## Data
 
-Trade data and emission factors in `config/` are the inputs used in the paper.
-Check the terms of the original sources before reusing them.
+The inputs in `config/` are processed series built from Eurostat (trade), the ITC
+Market Access Map (tariffs) and the European Commission's default emission values
+(Regulation (EU) 2025/2621). [`DATA.md`](DATA.md) documents each source: database,
+version and access date, what was extracted, how it was treated, the structure of
+the files, and what is not in this repository. Check the terms of each source
+before reusing the data.
 
 ## License
 

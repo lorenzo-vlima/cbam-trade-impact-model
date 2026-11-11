@@ -403,11 +403,12 @@ a group (`grupo`, `grupo_label`). They define the groups of Annex E.
 |---|---|
 | Trade | Eurostat, "International trade of EU and non-EU countries since 2002 by HS2-4-6", downloaded in April 2026 |
 | Tariffs | International Trade Centre, Market Access Map (MAcMap), May 2026; the lowest rate available to the importer (agreement, preference or MFN), and for HS4 products the simple average of the HS6 rates |
-| Emission factors | Annex I of Regulation (EU) 2025/2620 (default values), with the regulation's mark-up |
+| Emission factors | Commission Implementing Regulation (EU) 2025/2621 (default values for the definitive period), with the regulation's mark-up |
 
 The scripts that downloaded and merged these sources into the files above are
 **not** in this repository; the files in `config/` are the result of that
-preparation. Check the terms of the original sources before reusing them.
+preparation. Full detail on each source, how it was extracted and treated, and
+the versions used is in [`DATA.md`](DATA.md).
 
 ---
 
