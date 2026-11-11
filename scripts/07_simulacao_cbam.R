@@ -138,7 +138,9 @@ calcular_price_rel_2026 <- function(cenario_tarifa, fase, preco_co2) {
         TRUE                              ~ fator_final * preco_co2
       ),
       preco_base_2026 = case_when(
-        cenario_tarifa == "Mercosul" & exporter %in% paises_mercosul ~
+        # the tariff is only in the price when price_model is "post_tax"
+        cenario_tarifa == "Mercosul" & exporter %in% paises_mercosul &
+          price_model == "post_tax" ~
           price / (1 + tariff),
         TRUE ~ price
       ),

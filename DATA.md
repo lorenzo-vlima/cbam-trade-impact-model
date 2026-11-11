@@ -1,10 +1,7 @@
 # Data sources
 
-This document says where each number in `config/` comes from, how it was
-obtained and treated before it reached this repository, and what the code does
-with it afterwards. Everything stated about extraction and treatment comes from
-Section 3.1 of the paper (`paper/`) or can be checked in the files themselves;
-where the paper is silent, this document says so.
+This document says where each number in `config/` comes from, how it was obtained and treated before it reached this repository, and what the code does with it
+afterwards. Section 3.1 of the paper (`paper/`) develops the same material.
 
 Contents
 
@@ -15,7 +12,7 @@ Contents
 5. [Product scope](#5-product-scope)
 6. [Carbon price scenarios](#6-carbon-price-scenarios)
 7. [From the sources to the files in `config/`](#7-from-the-sources-to-the-files-in-config)
-8. [Limitations of the data stated in the paper](#8-limitations-of-the-data-stated-in-the-paper)
+8. [Limitations of the data](#8-limitations-of-the-data)
 9. [What is not in this repository](#9-what-is-not-in-this-repository)
 10. [References](#10-references)
 
@@ -53,7 +50,7 @@ Harmonised System (HS) product and partner country. Link:
   code) and year.
 - **Period**: the database starts in 2002. The files here cover **2008 to
   2025**, and the analysis uses **2010 to 2025** (`ano_inicio`, `ano_corte`).
-  The paper starts in 2010 so that the 2008 crisis does not affect the model.
+  The sample starts in 2010 so that the 2008 crisis does not affect the model.
 - **Products**: the 62 products of the CBAM Regulation in the three sectors,
   at the HS4 level for most and the HS6 level for the products the Regulation
   lists that way (section 5).
@@ -63,8 +60,8 @@ Harmonised System (HS) product and partner country. Link:
 
 **Price.** Value divided by quantity, in euros per ton. The values are **CIF**
 (cost, insurance and freight), so the price already carries freight and
-insurance, which the paper treats as the gravity-model "frictions" other than
-tariffs (Section 3.1.1). Tariffs are **not** included in the trade value; they
+insurance, which are treated as the gravity-model "frictions" other than tariffs
+(Section 3.1.1). Tariffs are **not** included in the trade value; they
 are added by the model (see `price_model` in `CONFIGURATION.md`).
 
 **Market share.** Built from the data: volume of an exporter in a product and
@@ -78,9 +75,9 @@ fewer than 5 years) are applied in the code and are described in
 
 **Also cited, not a model input.** Eurostat's *Extra-EU trade by partner*
 (`ext_lt_maineu`, dated 19 March 2026, accessed 27 May 2026) appears in the
-paper's introduction as the source of the total trade of Brazil and Argentina
-with the EU in 2025 (87.1 and 17.4 billion). It is context for the paper and is
-not read by any script.
+introduction of the paper as the source of the total trade of Brazil and
+Argentina with the EU in 2025 (87.1 and 17.4 billion). It is context for the
+paper and is not read by any script.
 
 ---
 
@@ -131,8 +128,7 @@ CBAM. The Commission publishes the values at
   `ROW` row.
 - They were determined from data collected during the transitional period
   (2023 to 2025). They apply when the importer does not submit verified
-  installation-level emissions, and the paper treats them as an approximation of
-  real emissions.
+  installation-level emissions, and are treated as an approximation of real emissions.
 - The Regulation adds a **mark-up** to the 2025 baseline values, rising by 10
   percentage points a year: **10% in 2026, 20% in 2027, 30% in 2028**. A review
   of the whole system is foreseen for 2027.
@@ -153,13 +149,11 @@ per exporter and product (`premissa_agregacao = "media_simples"`). The file does
 not contain the EU member states: they are treated as having a zero factor in
 the code.
 
-**What the paper does not state.** It does not say which year's factor applies
-to the three carbon-price scenarios. The code uses `factor_2026`
-(`fase_cbam`).
+**Which factor is used.** In the six scenarios `factor_2026` is used, the base
+value with the 2026 mark-up (`fase_cbam`).
 
 **No deduction of carbon already paid.** The Regulation lets importers deduct a
-carbon price already paid in the country of origin. The paper does not apply
-this, because there are no consistent and comparable data across countries
+carbon price already paid in the country of origin. This is not applied, because there are no consistent and comparable data across countries
 (Section 3.3.1).
 
 ---
@@ -185,8 +179,7 @@ the paper. The groups are coded in `config/*_grupos.R`.
 ## 6. Carbon price scenarios
 
 The three carbon prices (EUR per tonne of CO2) are options in `main_v2.R`
-(`cenarios_carbono`), not files. The paper anchors them as follows
-(Section 3.3.1):
+(`cenarios_carbono`), not files. They are anchored as follows (Section 3.3.1):
 
 | Scenario | Value | Anchor |
 |---|---|---|
@@ -194,7 +187,7 @@ The three carbon prices (EUR per tonne of CO2) are options in `main_v2.R`
 | Middle | 95 | Sensitivity test around the forecast for 2027 (Reuters, 30 January 2026; Altaghlibi and Gentile, ABN AMRO, 16 September 2025) |
 | High | 115 | Sensitivity test around the forecast for 2028 (same sources) |
 
-The paper uses one average price per year, because the analysis is yearly. The
+One average price per year is used, because the analysis is yearly. The
 Commission publishes the certificate price quarterly in 2026 and weekly from
 2027.
 
@@ -255,7 +248,7 @@ those of Annex E of the paper (the labels are worded slightly differently).
 
 ---
 
-## 8. Limitations of the data stated in the paper
+## 8. Limitations of the data
 
 - **Tariff gaps.** Tariff data are not available for every origin and year, which
   is why origins without them are dropped (Section 3.1.2 and 3.1.4).
@@ -275,9 +268,8 @@ those of Annex E of the paper (the labels are worded slightly differently).
 
 - **The extraction and merging scripts.** The files in `config/` are the result
   of preparing the sources above. The scripts that downloaded the Eurostat and
-  MAcMap data and merged them with the emission factors are not here, and the
-  paper does not give the exact queries (indicator codes, flow selection,
-  partner list). Section 2 lists the parameters the paper does state.
+  MAcMap data and merged them with the emission factors are not in this
+  repository.
 - **The raw downloads.** Neither the Eurostat nor the MAcMap original files are
   included.
 - **A single combined source.** Each source is updated by its provider over
@@ -296,7 +288,7 @@ values; check the terms of each before reusing or redistributing them.
 
 ## 10. References
 
-References as they appear in the paper.
+References for the data sources, as in the paper.
 
 - EUROPEAN UNION. *Regulation (EU) 2023/956* (CBAM Regulation). 10 May 2023.
   <https://eur-lex.europa.eu/eli/reg/2023/956/oj>. Accessed 24 May 2026.

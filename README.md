@@ -4,12 +4,11 @@
 
 Lorenzo Viana Lima and Flávio Tosi Feijó. The paper is in `paper/`.
 
-Replication files for a paper on how the EU's Carbon Border Adjustment
+Replication files for the paper on how the EU's Carbon Border Adjustment
 Mechanism (CBAM) affects the competitiveness of Brazilian and Argentine
-exports in **iron & steel, aluminium and cement**. A structural gravity model
-estimated by PPML with fixed effects gives market-share price elasticities at
-the individual product level (trade flows from more than 150 countries to the
-EU, 2010 to 2025). These elasticities feed CBAM cost simulations under three
+exports in **iron & steel, aluminium and cement**. Market-share price elasticities are estimated at the individual product level
+with a structural gravity model (PPML with fixed effects) on trade flows from
+more than 150 countries to the EU, 2010 to 2025. These elasticities feed CBAM cost simulations under three
 carbon prices and two tariff regimes (MFN and Mercosul).
 
 ## Method
@@ -88,7 +87,7 @@ Rscript rodar_modelo.R
 Repeat for `aluminio` and `cimento`. A run takes a few minutes.
 
 **Every option is documented in [`CONFIGURATION.md`](CONFIGURATION.md)**: what
-it does, its default, whether the paper uses it, and the reason the paper gives.
+it does, its default, whether it is used in the paper, and why.
 The table below is only a summary of the options that change the output folder.
 
 **Run folders.** Results go to
@@ -161,9 +160,9 @@ identifiers (for example `cenario_carbono`, `13_cbam_resumo_pais.csv`).
 
 ## Data
 
-The inputs in `config/` are processed series built from Eurostat (trade), the ITC
-Market Access Map (tariffs) and the European Commission's default emission values
-(Regulation (EU) 2025/2621). [`DATA.md`](DATA.md) documents each source: database,
+The inputs in `config/` are processed series built from Eurostat (trade),
+the ITC Market Access Map (tariffs) and the European Commission's default emission
+values (Regulation (EU) 2025/2621). [`DATA.md`](DATA.md) documents each source: database,
 version and access date, what was extracted, how it was treated, the structure of
 the files, and what is not in this repository. Check the terms of each source
 before reusing the data.

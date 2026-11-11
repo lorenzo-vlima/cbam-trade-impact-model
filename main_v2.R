@@ -42,7 +42,6 @@ half_life       <- 5
 
 modo_grupo <- "individual"
 
-min_obs      <- 5
 min_anos_obs <- 5
 
 z_critico <- 1.96
