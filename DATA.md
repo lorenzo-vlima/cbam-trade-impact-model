@@ -150,7 +150,8 @@ not contain the EU member states: they are treated as having a zero factor in
 the code.
 
 **Which factor is used.** In the six scenarios `factor_2026` is used, the base
-value with the 2026 mark-up (`fase_cbam`).
+value with the 2026 mark-up (`fase_cbam`), because it is the factor that would
+apply in the short term.
 
 **No deduction of carbon already paid.** The Regulation lets importers deduct a
 carbon price already paid in the country of origin. This is not applied, because there are no consistent and comparable data across countries
@@ -238,9 +239,9 @@ those of Annex E of the paper (the labels are worded slightly differently).
 
 | Treatment | Where |
 |---|---|
-| Intra-EU flows kept, volume and value taken from Eurostat | before this repository |
-| Effective tariff, with the HS4 average of the HS6 rates | before this repository (column `tariff`) |
-| Emission factors expressed at CN8 or finer lines, with the mark-up columns | before this repository |
+| Intra-EU flows kept, volume and value taken from Eurostat | by hand, before this repository |
+| Effective tariff, with the HS4 average of the HS6 rates | by hand, before this repository (column `tariff`) |
+| Emission factors expressed at CN8 or finer lines, with the mark-up columns | by hand, before this repository |
 | Averaging of the emission-factor lines to one value per exporter and product | the code, `07_simulacao_cbam.R` (`premissa_agregacao`) |
 | Filters on year, volume, value, tariff and years of presence | the code, `01_limpeza.R` |
 | Price with tariff, relative price, market share | the code, `01_limpeza.R` |
@@ -266,10 +267,9 @@ those of Annex E of the paper (the labels are worded slightly differently).
 
 ## 9. What is not in this repository
 
-- **The extraction and merging scripts.** The files in `config/` are the result
-  of preparing the sources above. The scripts that downloaded the Eurostat and
-  MAcMap data and merged them with the emission factors are not in this
-  repository.
+- **Extraction and merging scripts.** The files in `config/` are the result of
+  preparing the sources above. The Eurostat and MAcMap data were downloaded and
+  merged with the emission factors by hand, so there are no extraction scripts.
 - **The raw downloads.** Neither the Eurostat nor the MAcMap original files are
   included.
 - **A single combined source.** Each source is updated by its provider over
