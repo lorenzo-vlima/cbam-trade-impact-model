@@ -8,7 +8,5 @@ Rplots.pdf
 .Rhistory
 .RData
 .Rproj.user/
-node_modules/
-dashboard_data.json
 __pycache__/
 *.pyc

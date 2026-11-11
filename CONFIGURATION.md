@@ -80,7 +80,7 @@ The focal countries: the ones that get their own price elasticity and are
 simulated individually. Use ISO 3166 alpha-2 codes as they appear in the trade
 data (`BR`, `AR`, `CN`, `RU`, ...).
 The paper's focal countries are Brazil and Argentina. You can pass any other
-countries, for example the basket of main exporters used in `analysis/`.
+countries.
 A country with no exports in the base window (the last `janela_base` years)
 has no rows in the simulation tables, and no warning is printed. For example,
 Belarus is in the cement estimation sample (19 observations) but has no cement
@@ -503,5 +503,4 @@ these files.
    adjustment.
 8. **Partial equilibrium.** The market's total size is fixed; the "gain" of the
    exempt bloc in the simulation is a result of renormalising shares, not an
-   estimated supply response. The emission-factor file has no EU producers, so
-   the effect on emissions of the exempt bloc cannot be assessed.
+   estimated supply response.
