@@ -31,7 +31,7 @@ linhas <- sub("^nome_grupo[[:space:]]*<-.*",
 
 if (!is.null(ANO_CORTE)) {
   linhas <- sub("^ano_corte[[:space:]]*<-.*", paste0("ano_corte <- ", ANO_CORTE), linhas)
-  linhas <- sub("^ano_val_treino[[:space:]]*<-.*", paste0("ano_val_treino <- ", ANO_CORTE - 2), linhas)
+  linhas <- sub("^ano_val_treino[[:space:]]*<-.*", paste0("ano_val_treino <- ", ANO_CORTE - 1), linhas)
   linhas <- sub("^ano_val_teste[[:space:]]*<-.*", paste0("ano_val_teste <- ", ANO_CORTE), linhas)
 }
 if (!is.null(PRICE_MODEL)) {

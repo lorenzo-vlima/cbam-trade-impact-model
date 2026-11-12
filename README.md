@@ -25,7 +25,7 @@ carbon prices and two tariff regimes (MFN and Mercosul).
   renormalised to sum to one. EU/EEA/Switzerland are exempt.
 - **Scenarios:** carbon price of EUR 75, 95 and 115 per tCO2, under MFN and
   Mercosul tariffs (6 per sector).
-- **Validation:** out-of-sample test (train to 2022, test 2025), explained
+- **Validation:** out-of-sample test (train to 2024, predict 2025), explained
   variation split between fixed effects and price, and a historical test with
   the 2016 EU anti-dumping duties on cold-rolled steel.
 

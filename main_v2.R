@@ -51,7 +51,7 @@ winsor_price_rel <- 0.01
 ano_inicio     <- 2010
 ano_corte      <- 2025
 
-ano_val_treino  <- 2022
+ano_val_treino  <- 2024
 ano_val_teste   <- 2025
 
 # Output folder suffix (the anti-dumping test uses "roll2015" runs)

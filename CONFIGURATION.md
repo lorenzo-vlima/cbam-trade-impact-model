@@ -41,7 +41,7 @@ It controls:
 | `PAISES` | `paises_grupo` | `c("BR", "AR")` |
 | `NOME` | `nome_grupo` | `"brazil_and_argentina"` |
 | `PRICE_MODEL` | `price_model` | `NULL` (keeps `"post_tax"`) |
-| `ANO_CORTE` | `ano_corte`, and also `ano_val_treino` (= `ANO_CORTE - 2`) and `ano_val_teste` (= `ANO_CORTE`) | `NULL` (keeps 2025, 2022, 2025) |
+| `ANO_CORTE` | `ano_corte`, and also `ano_val_treino` (= `ANO_CORTE - 1`) and `ano_val_teste` (= `ANO_CORTE`) | `NULL` (keeps 2025, 2024, 2025) |
 | `SUFIXO` | `sufixo_output` | `NULL` (keeps `"v2"`) |
 
 **By editing `main_v2.R`.** Every option in section 2 can be edited in the
@@ -191,14 +191,14 @@ simulation.
 #### `ano_val_treino` and `ano_val_teste` — available
 The out-of-sample validation tests whether the model performs well beyond the
 estimation sample: the model is estimated with data up to a period *x* and
-tries to predict the period after it. With the default values (`ano_val_treino = 2022`,
-`ano_val_teste = 2025`), `04_validacao.R` re-estimates the model on data up to
-2022, starts from the shares of 2022 and predicts the shares of 2025.
-`04b_validacao_delta.R` tests whether the elasticities predict changes in
-share: the base window is the last `janela_base` years up to `ano_val_treino`
-(2020 to 2022) and the test years are 2023, 2024 and 2025. To train up to 2024
-and predict 2025, set `ano_val_treino` to 2024. Both write the `5*_validacao*`
-files.
+tries to predict the period after it. With the default values (`ano_val_treino = 2024`, `ano_val_teste = 2025`),
+`04_validacao.R` re-estimates the model on data up to 2024, starts from the
+shares of 2024 and predicts the shares of 2025. `04b_validacao_delta.R` tests
+whether the elasticities predict changes in share: the base window is the last
+`janela_base` years up to `ano_val_treino` (2022 to 2024) and the test year is
+2025. Both write the `5*_validacao*` files. To test over several years, lower
+`ano_val_treino`: for example, `ano_val_treino = 2022` makes `04b` use the test
+years 2023, 2024 and 2025.
 The validation reported in the paper is the historical anti-dumping test
 (Section 4.1, Annex F), a separate procedure
 (`figuras/_teste_antidumping_2016*.py`). If you set `ANO_CORTE` through the
