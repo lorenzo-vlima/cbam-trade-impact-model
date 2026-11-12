@@ -166,8 +166,3 @@ values (Regulation (EU) 2025/2621). [`DATA.md`](DATA.md) documents each source: 
 version and access date, what was extracted, how it was treated, the structure of
 the files, and what is not in this repository. Check the terms of each source
 before reusing the data.
-
-## License
-
-Code is released under the MIT License (see `LICENSE`). The paper in `paper/`
-is not covered by that license.
