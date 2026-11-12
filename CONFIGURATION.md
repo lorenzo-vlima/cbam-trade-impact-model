@@ -190,7 +190,8 @@ simulation.
 
 #### `ano_val_treino` and `ano_val_teste` — available
 The out-of-sample validation tests whether the model performs well beyond the
-estimation sample. With the default values (`ano_val_treino = 2022`,
+estimation sample: the model is estimated with data up to a period *x* and
+tries to predict the period after it. With the default values (`ano_val_treino = 2022`,
 `ano_val_teste = 2025`), `04_validacao.R` re-estimates the model on data up to
 2022, starts from the shares of 2022 and predicts the shares of 2025.
 `04b_validacao_delta.R` tests whether the elasticities predict changes in
@@ -249,8 +250,10 @@ Mercosul members, and they have no effect when they are not in the trade data.
 `08_projecao_cbam.R` simulates 2026, 2027 and 2028 in sequence, each year
 starting from the previous year's simulated shares, using that year's emission
 factor (`factor_2026` to `factor_2028`) and carbon price (75, 95 and 115 in
-`projecao_precos`; the 2025 entry is the zero-price base). The results in the
-paper are the six static, independent scenarios, so this projection is not reported. Its outputs (`19_*`, `20_*`, `21_*` to `25_*`) are extras.
+`projecao_precos`; the 2025 entry is the zero-price base). The projection was
+built because the emission factors are available up to 2028. It is not used in
+the text of the paper, whose results are the six static, independent scenarios.
+Its outputs (`19_*`, `20_*`, `21_*` to `25_*`) are extras.
 
 ---
 
